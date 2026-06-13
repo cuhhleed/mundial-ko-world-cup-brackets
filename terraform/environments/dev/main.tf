@@ -38,3 +38,14 @@ module "networking" {
   private_subnet_cidrs = var.private_subnet_cidrs
   container_port       = var.container_port
 }
+
+# ---------------------------------------------------------------------------
+# Storage
+# ---------------------------------------------------------------------------
+
+module "storage" {
+  source = "../../modules/storage"
+
+  project_name = var.project_name
+  environment  = var.environment
+}
