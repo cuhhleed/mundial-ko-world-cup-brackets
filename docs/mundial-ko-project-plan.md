@@ -219,6 +219,13 @@ Acceptance Criteria:
 - Logout button clears tokens and redirects to Cognito logout endpoint
 - Unauthenticated users can view the live bracket and leaderboard but cannot create a bracket
 
+> **Note (pivot):** E1-S6 replaced Google OAuth / Cognito hosted UI with **passwordless email OTP** (Cognito `USER_AUTH` + `EMAIL_OTP`, no hosted UI, no client secret). The acceptance criteria above still describe the old hosted-UI redirect flow and need rewriting to the OTP flow: the SPA calls `InitiateAuth` (AuthFlow `USER_AUTH`) → `RespondToAuthChallenge` directly against the Cognito public API, no authorization-code exchange or hosted-UI redirect.
+>
+> **Cognito config injection (build-time, Option A):** The SPA needs `region`, `user_pool_id`, and `app_client_id` to initialize the Cognito SDK. These are non-secret and are exposed as root Terraform outputs (`aws_region`, `cognito_user_pool_id`, `cognito_app_client_id`) on both the dev and prod environments. The frontend build/deploy step must:
+> - Run `terraform output -raw <name>` (or read all outputs as JSON) after `apply` to fetch the three values.
+> - Export them as Vite build-time env vars (e.g. `VITE_AWS_REGION`, `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_APP_CLIENT_ID`) before `vite build` so they are inlined into the bundle, then sync to S3.
+> - Because the values are inlined at build time, rotating the app client requires a frontend rebuild + redeploy (acceptable — these IDs are effectively static after first creation).
+
 **Epic 2 Total Estimate: ~8.5h**
 
 

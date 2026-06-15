@@ -62,3 +62,8 @@ output "cloudwatch_log_group_name" {
   description = "Name of the CloudWatch log group for ECS tasks"
   value       = aws_cloudwatch_log_group.ecs.name
 }
+
+output "route53_zone_id" {
+  description = "ID of the Route 53 hosted zone for the domain (passed to frontend module)"
+  value       = data.aws_route53_zone.main.zone_id
+}

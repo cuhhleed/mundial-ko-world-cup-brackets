@@ -107,3 +107,39 @@ output "cloudwatch_log_group_name" {
   description = "Name of the CloudWatch log group for ECS tasks"
   value       = module.compute.cloudwatch_log_group_name
 }
+
+output "s3_bucket_name" {
+  description = "Name of the S3 bucket serving frontend assets"
+  value       = module.frontend.s3_bucket_name
+}
+
+output "cloudfront_distribution_id" {
+  description = "ID of the CloudFront distribution"
+  value       = module.frontend.cloudfront_distribution_id
+}
+
+output "frontend_url" {
+  description = "Public HTTPS URL for the frontend"
+  value       = module.frontend.frontend_url
+}
+
+# ---------------------------------------------------------------------------
+# Auth — consumed by the frontend build (E2-S4) to inject Cognito config
+# into the SPA as VITE_* env vars at build time. None of these are secrets;
+# they are required to initialize the Cognito SDK for the EMAIL_OTP flow.
+# ---------------------------------------------------------------------------
+
+output "aws_region" {
+  description = "AWS region the stack is deployed in (Cognito SDK config)"
+  value       = var.region
+}
+
+output "cognito_user_pool_id" {
+  description = "Cognito User Pool ID (frontend SDK config)"
+  value       = module.auth.user_pool_id
+}
+
+output "cognito_app_client_id" {
+  description = "Cognito app client ID (frontend SDK config)"
+  value       = module.auth.app_client_id
+}

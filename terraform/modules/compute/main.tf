@@ -323,6 +323,8 @@ resource "aws_ecs_task_definition" "api" {
         { name = "REDIS_ENDPOINT", value = var.redis_endpoint },
         { name = "REDIS_PORT", value = tostring(var.redis_port) },
         { name = "JWT_ISSUER", value = var.jwt_issuer },
+        { name = "COGNITO_USER_POOL_ID", value = var.cognito_user_pool_id },
+        { name = "COGNITO_APP_CLIENT_ID", value = var.cognito_app_client_id },
       ]
 
       logConfiguration = {
