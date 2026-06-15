@@ -23,6 +23,7 @@ resource "aws_elasticache_replication_group" "valkey" {
   num_cache_clusters   = 1
   parameter_group_name = aws_elasticache_parameter_group.valkey.name
   subnet_group_name    = aws_elasticache_subnet_group.valkey.name
+  port                 = 6379
   security_group_ids   = [var.elasticache_security_group_id]
 }
 

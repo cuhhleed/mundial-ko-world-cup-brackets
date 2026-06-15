@@ -39,3 +39,15 @@ variable "container_port" {
   type        = number
   default     = 8000
 }
+
+variable "domain_name" {
+  description = "Root domain name for the project"
+  type        = string
+  default     = "mundialko.com"
+}
+
+variable "api_subdomain" {
+  description = "Subdomain prefix for the API endpoint"
+  type        = string
+  default     = "api"
+}

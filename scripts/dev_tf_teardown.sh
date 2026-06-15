@@ -33,6 +33,7 @@ KEEP_PATTERNS=(
   "aws_iam_"
   "aws_acm_"
   "aws_route53_"
+  "aws_cloudwatch_"
 )
 
 EXCLUDE=$(printf "|%s" "${KEEP_PATTERNS[@]}")
