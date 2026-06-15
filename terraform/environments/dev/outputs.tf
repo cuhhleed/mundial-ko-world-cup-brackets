@@ -62,3 +62,13 @@ output "matches_table_arn" {
   description = "ARN of the Matches DynamoDB table"
   value       = module.storage.matches_table_arn
 }
+
+output "redis_endpoint" {
+  description = "DNS endpoint of the Valkey cache node"
+  value       = module.storage.redis_endpoint
+}
+
+output "redis_port" {
+  description = "Port of the Valkey cache node"
+  value       = module.storage.redis_port
+}

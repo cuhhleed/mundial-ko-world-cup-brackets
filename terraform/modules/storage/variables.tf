@@ -9,3 +9,19 @@ variable "environment" {
   description = "Deployment environment (e.g. dev, prod)"
   type        = string
 }
+
+variable "private_subnet_ids" {
+  description = "IDs of private subnets for the ElastiCache subnet group"
+  type        = list(string)
+}
+
+variable "elasticache_security_group_id" {
+  description = "Security group ID to attach to the ElastiCache cluster"
+  type        = string
+}
+
+variable "valkey_node_type" {
+  description = "ElastiCache node instance type"
+  type        = string
+  default     = "cache.t3.micro"
+}

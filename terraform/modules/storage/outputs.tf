@@ -29,3 +29,13 @@ output "matches_table_arn" {
   description = "ARN of the Matches DynamoDB table"
   value       = aws_dynamodb_table.matches.arn
 }
+
+output "redis_endpoint" {
+  description = "Primary endpoint of the Valkey replication group"
+  value       = aws_elasticache_replication_group.valkey.primary_endpoint_address
+}
+
+output "redis_port" {
+  description = "Port of the Valkey replication group"
+  value       = aws_elasticache_replication_group.valkey.port
+}
