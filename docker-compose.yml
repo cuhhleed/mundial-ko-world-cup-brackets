@@ -1,0 +1,14 @@
+services:
+  dynamodb-local:
+    image: amazon/dynamodb-local
+    ports:
+      - "8001:8000"
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
+
+  api:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file: ./backend/.env
+    depends_on:
+      - dynamodb-local
