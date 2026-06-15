@@ -51,3 +51,47 @@ module "storage" {
   private_subnet_ids            = module.networking.private_subnet_ids
   elasticache_security_group_id = module.networking.elasticache_security_group_id
 }
+
+# ---------------------------------------------------------------------------
+# Compute
+# ---------------------------------------------------------------------------
+
+module "compute" {
+  source = "../../modules/compute"
+
+  project_name = var.project_name
+  environment  = var.environment
+  region       = var.region
+
+  vpc_id                = module.networking.vpc_id
+  public_subnet_ids     = module.networking.public_subnet_ids
+  private_subnet_ids    = module.networking.private_subnet_ids
+  alb_security_group_id = module.networking.alb_security_group_id
+  ecs_security_group_id = module.networking.ecs_security_group_id
+
+  users_table_name    = module.storage.users_table_name
+  users_table_arn     = module.storage.users_table_arn
+  brackets_table_name = module.storage.brackets_table_name
+  brackets_table_arn  = module.storage.brackets_table_arn
+  matches_table_name  = module.storage.matches_table_name
+  matches_table_arn   = module.storage.matches_table_arn
+  redis_endpoint      = module.storage.redis_endpoint
+  redis_port          = module.storage.redis_port
+
+  domain_name   = var.domain_name
+  api_subdomain = var.api_subdomain
+}
+
+# ---------------------------------------------------------------------------
+# Frontend
+# ---------------------------------------------------------------------------
+
+module "frontend" {
+  source = "../../modules/frontend"
+
+  project_name        = var.project_name
+  environment         = var.environment
+  domain_name         = var.domain_name
+  acm_certificate_arn = module.compute.acm_certificate_arn
+  route53_zone_id     = module.compute.route53_zone_id
+}

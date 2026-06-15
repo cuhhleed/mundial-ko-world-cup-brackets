@@ -81,3 +81,17 @@ module "compute" {
   domain_name   = var.domain_name
   api_subdomain = var.api_subdomain
 }
+
+# ---------------------------------------------------------------------------
+# Frontend
+# ---------------------------------------------------------------------------
+
+module "frontend" {
+  source = "../../modules/frontend"
+
+  project_name        = var.project_name
+  environment         = var.environment
+  domain_name         = var.domain_name
+  acm_certificate_arn = module.compute.acm_certificate_arn
+  route53_zone_id     = module.compute.route53_zone_id
+}

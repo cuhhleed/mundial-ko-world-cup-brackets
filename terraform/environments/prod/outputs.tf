@@ -72,3 +72,18 @@ output "redis_port" {
   description = "Port of the Valkey cache node"
   value       = module.storage.redis_port
 }
+
+output "s3_bucket_name" {
+  description = "Name of the S3 bucket serving frontend assets"
+  value       = module.frontend.s3_bucket_name
+}
+
+output "cloudfront_distribution_id" {
+  description = "ID of the CloudFront distribution"
+  value       = module.frontend.cloudfront_distribution_id
+}
+
+output "frontend_url" {
+  description = "Public HTTPS URL for the frontend"
+  value       = module.frontend.frontend_url
+}
