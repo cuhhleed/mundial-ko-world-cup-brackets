@@ -1,9 +1,9 @@
-import logging
-
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
-logger = logging.getLogger(__name__)
+from app.logging import get_logger
+
+logger = get_logger("auth")
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -13,9 +13,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # E2-S2: decode and verify Cognito JWT here, extract sub as user_id
         if not auth_header or not auth_header.startswith("Bearer "):
             logger.warning(
-                "Request missing or malformed Authorization header: %s %s",
-                request.method,
-                request.url.path,
+                "missing_or_malformed_auth_header",
+                method=request.method,
+                path=request.url.path,
             )
 
         request.state.user_id = None

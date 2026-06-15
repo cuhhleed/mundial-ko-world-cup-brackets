@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir "poetry>=2.0.0,<3.0.0"
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
-RUN poetry install --no-interaction --no-ansi
+RUN poetry lock && poetry install --no-interaction --no-ansi
 
 COPY app/ app/
 
