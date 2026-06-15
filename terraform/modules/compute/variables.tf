@@ -141,11 +141,20 @@ variable "api_subdomain" {
 }
 
 # ---------------------------------------------------------------------------
-# Cognito placeholder
+# Auth (from auth module)
 # ---------------------------------------------------------------------------
 
 variable "jwt_issuer" {
-  description = "Cognito User Pool issuer URL — wired in E1-S5, empty until then"
+  description = "Cognito User Pool issuer URL"
   type        = string
-  default     = ""
+}
+
+variable "cognito_user_pool_id" {
+  description = "Cognito User Pool ID"
+  type        = string
+}
+
+variable "cognito_app_client_id" {
+  description = "Cognito app client ID"
+  type        = string
 }

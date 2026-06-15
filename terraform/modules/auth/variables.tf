@@ -1,2 +1,9 @@
-# Auth module variables — Cognito User Pool + Google OAuth (E1-S6)
-# Stub: variables will be added in sprint E1-S6
+variable "project_name" {
+  description = "Project name used for resource naming and tagging"
+  type        = string
+}
+
+variable "environment" {
+  description = "Deployment environment name"
+  type        = string
+}

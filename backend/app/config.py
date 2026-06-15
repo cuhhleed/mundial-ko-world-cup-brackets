@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     REDIS_ENDPOINT: str = "localhost"
     REDIS_PORT: int = 6379
     JWT_ISSUER: str | None = None  # E2-S2: Cognito User Pool URL
+    COGNITO_USER_POOL_ID: str | None = None  # E2-S2: Cognito User Pool ID
+    COGNITO_APP_CLIENT_ID: str | None = None  # E2-S2: token audience (aud) validation
 
     model_config = {"env_file": ".env"}
 

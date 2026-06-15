@@ -53,6 +53,17 @@ module "storage" {
 }
 
 # ---------------------------------------------------------------------------
+# Auth
+# ---------------------------------------------------------------------------
+
+module "auth" {
+  source = "../../modules/auth"
+
+  project_name = var.project_name
+  environment  = var.environment
+}
+
+# ---------------------------------------------------------------------------
 # Compute
 # ---------------------------------------------------------------------------
 
@@ -80,6 +91,10 @@ module "compute" {
 
   domain_name   = var.domain_name
   api_subdomain = var.api_subdomain
+
+  jwt_issuer            = module.auth.jwt_issuer_url
+  cognito_user_pool_id  = module.auth.user_pool_id
+  cognito_app_client_id = module.auth.app_client_id
 }
 
 # ---------------------------------------------------------------------------
