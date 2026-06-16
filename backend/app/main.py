@@ -4,11 +4,10 @@ from fastapi import FastAPI
 
 from app.config import settings
 from app.logging import configure_logging, get_logger
-from app.middleware.auth import AuthMiddleware
-from app.routers import health
+from app.routers import health, users
 
 configure_logging()
-logger = get_logger("main")
+logger = get_logger("mundial-ko-api")
 
 
 @asynccontextmanager
@@ -22,5 +21,5 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="mundial-ko-api", lifespan=lifespan)
-app.add_middleware(AuthMiddleware)
 app.include_router(health.router)
+app.include_router(users.router)

@@ -10,8 +10,12 @@ resource "aws_cognito_user_pool" "main" {
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
 
+  # Cognito requires PASSWORD to always be an allowed first auth factor; it
+  # cannot be removed from the pool-level list. Passwordless is still enforced
+  # by the app client, which enables only ALLOW_USER_AUTH (no password/SRP
+  # flows) — and users are never issued a password.
   sign_in_policy {
-    allowed_first_auth_factors = ["EMAIL_OTP"]
+    allowed_first_auth_factors = ["PASSWORD", "EMAIL_OTP"]
   }
 
   mfa_configuration = "OFF"
