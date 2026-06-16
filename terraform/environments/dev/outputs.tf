@@ -98,6 +98,11 @@ output "api_url" {
   value       = module.compute.api_url
 }
 
+output "ecs_task_definition_family" {
+  description = "Family name of the ECS task definition"
+  value       = module.compute.task_definition_family
+}
+
 output "acm_certificate_arn" {
   description = "ARN of the ACM wildcard certificate"
   value       = module.compute.acm_certificate_arn

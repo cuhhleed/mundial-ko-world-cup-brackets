@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/config.ts","./src/main.tsx","./src/vite-env.d.ts","./src/api/client.ts","./src/layouts/RootLayout.tsx","./src/pages/Bracket.tsx","./src/pages/Home.tsx","./src/pages/Leaderboard.tsx","./src/pages/LiveBracket.tsx"],"version":"5.9.3"}

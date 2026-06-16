@@ -325,6 +325,7 @@ resource "aws_ecs_task_definition" "api" {
         { name = "JWT_ISSUER", value = var.jwt_issuer },
         { name = "COGNITO_USER_POOL_ID", value = var.cognito_user_pool_id },
         { name = "COGNITO_APP_CLIENT_ID", value = var.cognito_app_client_id },
+        { name = "FRONTEND_URL", value = "https://${var.domain_name}" },
       ]
 
       logConfiguration = {

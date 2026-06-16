@@ -53,10 +53,19 @@ docker push "$TAG_LATEST"
 echo "==> Pushing $TAG_SHA"
 docker push "$TAG_SHA"
 
+TASK_DEF="$(tf_output ecs_task_definition_family)"
+LATEST_REVISION="$(aws ecs describe-task-definition \
+  --task-definition "$TASK_DEF" \
+  --region "$REGION" \
+  --query 'taskDefinition.taskDefinitionArn' \
+  --output text)"
+
 echo "==> Triggering ECS force-new-deployment (cluster=$CLUSTER, service=$SERVICE)"
+echo "    Task definition: $LATEST_REVISION"
 aws ecs update-service \
   --cluster "$CLUSTER" \
   --service "$SERVICE" \
+  --task-definition "$LATEST_REVISION" \
   --force-new-deployment \
   --region "$REGION" \
   >/dev/null

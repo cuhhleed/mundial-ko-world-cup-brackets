@@ -45,12 +45,14 @@ REGION="$(tf_output aws_region)"
 VITE_AWS_REGION="$REGION"
 VITE_COGNITO_USER_POOL_ID="$(tf_output cognito_user_pool_id)"
 VITE_COGNITO_APP_CLIENT_ID="$(tf_output cognito_app_client_id)"
-export VITE_AWS_REGION VITE_COGNITO_USER_POOL_ID VITE_COGNITO_APP_CLIENT_ID
+VITE_API_URL="$(tf_output api_url)"
+export VITE_AWS_REGION VITE_COGNITO_USER_POOL_ID VITE_COGNITO_APP_CLIENT_ID VITE_API_URL
 
 echo "==> Injecting Cognito config:"
 echo "    VITE_AWS_REGION              = $VITE_AWS_REGION"
 echo "    VITE_COGNITO_USER_POOL_ID    = $VITE_COGNITO_USER_POOL_ID"
 echo "    VITE_COGNITO_APP_CLIENT_ID   = $VITE_COGNITO_APP_CLIENT_ID"
+echo "    VITE_API_URL                 = $VITE_API_URL"
 
 echo "==> Building frontend (npm ci && npm run build)"
 cd "$FRONTEND_DIR"
