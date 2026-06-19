@@ -29,6 +29,7 @@ KEEP_PATTERNS=(
   "aws_s3_bucket"
   "aws_cloudfront_"
   "aws_cognito_"
+  "aws_ses_"
   "aws_ecr_"
   "aws_iam_"
   "aws_acm_"

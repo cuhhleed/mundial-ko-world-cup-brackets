@@ -61,6 +61,7 @@ module "auth" {
 
   project_name = var.project_name
   environment  = var.environment
+  domain_name  = var.domain_name
 }
 
 # ---------------------------------------------------------------------------
@@ -95,6 +96,7 @@ module "compute" {
   jwt_issuer            = module.auth.jwt_issuer_url
   cognito_user_pool_id  = module.auth.user_pool_id
   cognito_app_client_id = module.auth.app_client_id
+  google_client_id      = var.google_client_id
 }
 
 # ---------------------------------------------------------------------------

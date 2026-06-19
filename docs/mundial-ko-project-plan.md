@@ -178,6 +178,8 @@ Acceptance Criteria:
 - ALB health check passes
 - Environment variables loaded for DynamoDB, Redis, Cognito config
 
+> **Note:** Dockerfile uses **Poetry** for dependency management/install instead of raw `pip` as written above — functionally equivalent, with better lockfile handling. Base image (3.12-slim) and uvicorn entrypoint unchanged.
+
 ### E2-S2: Cognito JWT Validation Middleware
 **Estimate: 2h**
 
@@ -225,6 +227,8 @@ Acceptance Criteria:
 > - Run `terraform output -raw <name>` (or read all outputs as JSON) after `apply` to fetch the three values.
 > - Export them as Vite build-time env vars (e.g. `VITE_AWS_REGION`, `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_APP_CLIENT_ID`) before `vite build` so they are inlined into the bundle, then sync to S3.
 > - Because the values are inlined at build time, rotating the app client requires a frontend rebuild + redeploy (acceptable — these IDs are effectively static after first creation).
+>
+> **Note (E2-S2 pivot):** The backend `PATCH /api/users/me` endpoint to let a user edit their `display_name`, plus its accompanying UI, are deferred to E2-S4. In E2-S2, `display_name` is auto-generated on first login as a randomized football handle (e.g. `VolleyTalisman7`). The SPA must send the **ID token** (not the access token) as the `Authorization: Bearer` header — the backend explicitly rejects tokens where `token_use != "id"`. The Cognito SDK `RespondToAuthChallenge` response returns both tokens; the frontend must select `AuthenticationResult.IdToken`.
 
 **Epic 2 Total Estimate: ~8.5h**
 

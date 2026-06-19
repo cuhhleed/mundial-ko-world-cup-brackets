@@ -98,6 +98,11 @@ output "api_url" {
   value       = module.compute.api_url
 }
 
+output "ecs_task_definition_family" {
+  description = "Family name of the ECS task definition"
+  value       = module.compute.task_definition_family
+}
+
 output "acm_certificate_arn" {
   description = "ARN of the ACM wildcard certificate"
   value       = module.compute.acm_certificate_arn
@@ -142,4 +147,9 @@ output "cognito_user_pool_id" {
 output "cognito_app_client_id" {
   description = "Cognito app client ID (frontend SDK config)"
   value       = module.auth.app_client_id
+}
+
+output "google_client_id" {
+  description = "Google OAuth client ID (frontend GIS config, injected as VITE_GOOGLE_CLIENT_ID)"
+  value       = var.google_client_id
 }

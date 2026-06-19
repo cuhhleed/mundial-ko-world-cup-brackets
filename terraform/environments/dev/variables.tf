@@ -51,3 +51,13 @@ variable "api_subdomain" {
   type        = string
   default     = "api"
 }
+
+# Non-secret public identifier (ships in the SPA). Console-managed (ADR-004):
+# the OAuth client and its authorized origins live in the Google Cloud Console,
+# not Terraform — keep the live origins in sync with the frontend URL by hand.
+# Shared across dev and prod for now.
+variable "google_client_id" {
+  description = "Google OAuth client ID (token audience), injected into the API env and the SPA build"
+  type        = string
+  default     = "525656224688-cbte42k40e6kuk6s2cvq3t2sq2lg8cmt.apps.googleusercontent.com"
+}

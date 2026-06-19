@@ -1,3 +1,7 @@
+resource "aws_ses_domain_identity" "main" {
+  domain = var.domain_name
+}
+
 resource "aws_cognito_user_pool" "main" {
   name = "${var.project_name}-${var.environment}"
 
@@ -10,14 +14,20 @@ resource "aws_cognito_user_pool" "main" {
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
 
+  # Cognito requires PASSWORD to always be an allowed first auth factor; it
+  # cannot be removed from the pool-level list. Passwordless is still enforced
+  # by the app client, which enables only ALLOW_USER_AUTH (no password/SRP
+  # flows) — and users are never issued a password.
   sign_in_policy {
-    allowed_first_auth_factors = ["EMAIL_OTP"]
+    allowed_first_auth_factors = ["PASSWORD", "EMAIL_OTP"]
   }
 
   mfa_configuration = "OFF"
 
   email_configuration {
-    email_sending_account = "COGNITO_DEFAULT"
+    email_sending_account = "DEVELOPER"
+    source_arn            = aws_ses_domain_identity.main.arn
+    from_email_address    = "Mundial KO <noreply@${var.domain_name}>"
   }
 
   account_recovery_setting {
