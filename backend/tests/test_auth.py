@@ -1,5 +1,5 @@
 """
-Tests for the Cognito JWT auth dependency and /api/users/me endpoint.
+Tests for the Google JWT auth dependency and /api/users/me endpoint.
 """
 
 import re
@@ -9,6 +9,7 @@ import jwt as pyjwt
 from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 
+from app.auth.verifier import get_verifier
 from app.config import settings
 from app.db.dynamo import get_table
 from app.main import app
@@ -64,7 +65,7 @@ class TestGetMe:
         assert resp.status_code == 401
 
     def test_wrong_issuer_returns_401(self, client: TestClient):
-        token = make_token(iss="https://evil.example.com/pool")
+        token = make_token(iss="https://evil.example.com/issuer")
         resp = client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 401
 
@@ -79,7 +80,7 @@ class TestGetMe:
                 "aud": TEST_AUD,
                 "sub": "sub-x",
                 "email": "x@example.com",
-                "token_use": "id",
+                "email_verified": True,
                 "exp": int(time.time()) + 3600,
             },
             other_key,
@@ -91,10 +92,34 @@ class TestGetMe:
         resp = bad_client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 401
 
-    def test_access_token_use_returns_401(self, client: TestClient):
-        token = make_token(token_use="access")
+    def test_unverified_email_returns_401(self, client: TestClient):
+        """Google tokens with email_verified=false must be rejected."""
+        token = make_token(email_verified=False)
         resp = client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 401
+
+    def test_accounts_google_com_issuer_accepted(self, mock_dynamo, override_verifier):
+        """Both Google issuer strings must be accepted."""
+        # Override verifier already accepts TEST_ISS ("https://accounts.google.com").
+        # Build a verifier that accepts the short-form issuer and verify it also works.
+        from app.auth.verifier import GoogleJwtVerifier
+        from tests.conftest import _FAKE_JWK_CLIENT
+
+        alt_verifier = GoogleJwtVerifier(
+            audience=TEST_AUD,
+            issuers=["accounts.google.com"],
+            jwk_client=_FAKE_JWK_CLIENT,
+        )
+        app.dependency_overrides[get_verifier] = lambda: alt_verifier
+        try:
+            alt_token = make_token(iss="accounts.google.com")
+            alt_client = TestClient(app)
+            resp = alt_client.get(
+                "/api/users/me", headers={"Authorization": f"Bearer {alt_token}"}
+            )
+            assert resp.status_code == 200
+        finally:
+            app.dependency_overrides.clear()
 
     def test_health_without_token_returns_200(self, client: TestClient):
         resp = client.get("/health")

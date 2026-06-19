@@ -45,13 +45,18 @@ REGION="$(tf_output aws_region)"
 VITE_AWS_REGION="$REGION"
 VITE_COGNITO_USER_POOL_ID="$(tf_output cognito_user_pool_id)"
 VITE_COGNITO_APP_CLIENT_ID="$(tf_output cognito_app_client_id)"
+VITE_GOOGLE_CLIENT_ID="$(tf_output google_client_id)"
 VITE_API_URL="$(tf_output api_url)"
-export VITE_AWS_REGION VITE_COGNITO_USER_POOL_ID VITE_COGNITO_APP_CLIENT_ID VITE_API_URL
+export VITE_AWS_REGION VITE_COGNITO_USER_POOL_ID VITE_COGNITO_APP_CLIENT_ID VITE_GOOGLE_CLIENT_ID VITE_API_URL
 
-echo "==> Injecting Cognito config:"
+# Exported VITE_* vars take precedence over frontend/.env (Vite never overwrites
+# pre-existing env vars), so the live client ID here overrides the local one in
+# .env without touching that file.
+echo "==> Injecting frontend config:"
 echo "    VITE_AWS_REGION              = $VITE_AWS_REGION"
 echo "    VITE_COGNITO_USER_POOL_ID    = $VITE_COGNITO_USER_POOL_ID"
 echo "    VITE_COGNITO_APP_CLIENT_ID   = $VITE_COGNITO_APP_CLIENT_ID"
+echo "    VITE_GOOGLE_CLIENT_ID        = $VITE_GOOGLE_CLIENT_ID"
 echo "    VITE_API_URL                 = $VITE_API_URL"
 
 echo "==> Building frontend (npm ci && npm run build)"

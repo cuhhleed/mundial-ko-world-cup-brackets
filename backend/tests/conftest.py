@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 from moto import mock_aws
 
-from app.auth.verifier import CognitoJwtVerifier, get_verifier
+from app.auth.verifier import GoogleJwtVerifier, get_verifier
 from app.config import settings
 from app.main import app
 from app.services.users import reset_seen_cache
@@ -35,18 +35,18 @@ _PUBLIC_KEY_PEM = _PUBLIC_KEY.public_bytes(
 )
 
 TEST_KID = "test-key-id-1"
-TEST_ISS = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_TEST"
-TEST_AUD = "test-app-client-id"
+TEST_ISS = "https://accounts.google.com"
+TEST_AUD = "test-google-client-id"
 
 
 # ---------------------------------------------------------------------------
 # Token factory
 # ---------------------------------------------------------------------------
 def make_token(**overrides) -> str:
-    """Sign a minimal Cognito ID token with the test private key.
+    """Sign a minimal Google ID token with the test private key.
 
     Any key in overrides replaces the corresponding default claim, allowing
-    tests to inject expired timestamps, wrong audiences, wrong token_use, etc.
+    tests to inject expired timestamps, wrong audiences, wrong issuers, etc.
     """
     now = int(time.time())
     defaults: dict = {
@@ -54,7 +54,7 @@ def make_token(**overrides) -> str:
         "aud": TEST_AUD,
         "sub": "user-sub-123",
         "email": "test@example.com",
-        "token_use": "id",
+        "email_verified": True,
         "exp": now + 3600,
     }
     payload = {**defaults, **overrides}
@@ -92,8 +92,7 @@ def clear_seen_cache():
 def mock_dynamo(monkeypatch):
     """Spin up a moto DynamoDB mock and create the Users table."""
     monkeypatch.setattr(settings, "USERS_TABLE", "mundial-users-test")
-    monkeypatch.setattr(settings, "JWT_ISSUER", TEST_ISS)
-    monkeypatch.setattr(settings, "COGNITO_APP_CLIENT_ID", TEST_AUD)
+    monkeypatch.setattr(settings, "GOOGLE_CLIENT_ID", TEST_AUD)
     # Force the app's boto3 resource onto moto's mocked backend instead of the
     # dynamodb-local endpoint that .env injects into settings.
     monkeypatch.setattr(settings, "DYNAMODB_ENDPOINT_URL", None)
@@ -108,7 +107,9 @@ def mock_dynamo(monkeypatch):
         boto3.resource("dynamodb", region_name="us-east-1").create_table(
             TableName="mundial-users-test",
             KeySchema=[{"AttributeName": "user_id", "KeyType": "HASH"}],
-            AttributeDefinitions=[{"AttributeName": "user_id", "AttributeType": "S"}],
+            AttributeDefinitions=[
+                {"AttributeName": "user_id", "AttributeType": "S"},
+            ],
             BillingMode="PAY_PER_REQUEST",
         )
         yield
@@ -119,10 +120,10 @@ def mock_dynamo(monkeypatch):
 
 @pytest.fixture()
 def override_verifier():
-    """Replace the real CognitoJwtVerifier with a test instance backed by the fake JWK client."""
-    test_verifier = CognitoJwtVerifier(
-        issuer=TEST_ISS,
+    """Replace the real GoogleJwtVerifier with a test instance backed by the fake JWK client."""
+    test_verifier = GoogleJwtVerifier(
         audience=TEST_AUD,
+        issuers=[TEST_ISS],
         jwk_client=_FAKE_JWK_CLIENT,
     )
     app.dependency_overrides[get_verifier] = lambda: test_verifier

@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.auth.verifier import CognitoJwtVerifier, InvalidTokenError, get_verifier
+from app.auth.verifier import GoogleJwtVerifier, InvalidTokenError, get_verifier
 from app.logging import get_logger
 from app.models.user import AuthenticatedUser
 from app.services import users
@@ -18,7 +18,7 @@ _bearer = HTTPBearer(auto_error=False)
 def require_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
-    verifier: CognitoJwtVerifier = Depends(get_verifier),
+    verifier: GoogleJwtVerifier = Depends(get_verifier),
 ) -> AuthenticatedUser:
     if credentials is None:
         raise HTTPException(

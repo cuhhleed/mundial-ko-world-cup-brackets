@@ -158,3 +158,8 @@ variable "cognito_app_client_id" {
   description = "Cognito app client ID"
   type        = string
 }
+
+variable "google_client_id" {
+  description = "Google OAuth client ID (token audience for ID-token validation)"
+  type        = string
+}

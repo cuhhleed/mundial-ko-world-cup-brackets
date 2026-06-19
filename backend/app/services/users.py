@@ -54,3 +54,19 @@ def get(user_id: str) -> UserRecord | None:
     if item is None:
         return None
     return UserRecord(**item)
+
+
+def update_display_name(user_id: str, display_name: str) -> UserRecord | None:
+    try:
+        response = get_table(settings.USERS_TABLE).update_item(
+            Key={"user_id": user_id},
+            UpdateExpression="SET display_name = :dn",
+            ConditionExpression="attribute_exists(user_id)",
+            ExpressionAttributeValues={":dn": display_name},
+            ReturnValues="ALL_NEW",
+        )
+    except botocore.exceptions.ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            return None
+        raise
+    return UserRecord(**response["Attributes"])

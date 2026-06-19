@@ -1,3 +1,7 @@
+resource "aws_ses_domain_identity" "main" {
+  domain = var.domain_name
+}
+
 resource "aws_cognito_user_pool" "main" {
   name = "${var.project_name}-${var.environment}"
 
@@ -21,7 +25,9 @@ resource "aws_cognito_user_pool" "main" {
   mfa_configuration = "OFF"
 
   email_configuration {
-    email_sending_account = "COGNITO_DEFAULT"
+    email_sending_account = "DEVELOPER"
+    source_arn            = aws_ses_domain_identity.main.arn
+    from_email_address    = "Mundial KO <noreply@${var.domain_name}>"
   }
 
   account_recovery_setting {

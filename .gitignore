@@ -88,3 +88,4 @@ dmypy.json
 htmlcov/
 .tox/
 .hypothesis/
+backend/app/routers/__pycache__
