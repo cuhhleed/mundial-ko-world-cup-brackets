@@ -28,9 +28,7 @@ def create_bracket(
 
 
 @router.get("/template", response_model=BracketTemplate)
-def get_bracket_template(
-    user: AuthenticatedUser = Depends(require_user),
-) -> BracketTemplate:
+def get_bracket_template() -> BracketTemplate:
     return brackets.get_bracket_template()
 
 

@@ -6,7 +6,7 @@ import botocore.exceptions
 from app.bracket.derivation import validate_bracket
 from app.bracket.merge import MergePredictionsError, merge_predictions, slot_prediction_from_match
 from app.bracket.r32_matchups import load_r32_matchups
-from app.bracket.topology import ALL_SLOTS
+from app.bracket.topology import ALL_SLOTS, FEEDERS
 from app.config import settings
 from app.db.dynamo import get_table
 from app.logging import get_logger
@@ -120,6 +120,15 @@ def build_bracket_response(bracket: Bracket) -> BracketResponse:
     )
 
 
+def _get_outcome_team(template: SlotTemplate, outcome: str) -> str | None:
+    """Return winner or loser team name from a locked slot's result."""
+    if not template.result or not template.result.teams:
+        return None
+    if outcome == "winner":
+        return template.result.winner
+    return next((t for t in template.result.teams if t != template.result.winner), None)
+
+
 def get_bracket_template() -> BracketTemplate:
     all_matches = get_all_matches()
     slots: dict[str, SlotTemplate] = {}
@@ -144,6 +153,31 @@ def get_bracket_template() -> BracketTemplate:
             slots[slot] = SlotTemplate(
                 slot_id=slot,
                 teams=None,
+                status="open",
+            )
+
+    # Derive teams for downstream slots whose both feeders are locked.
+    # ALL_SLOTS is in topological order so feeders are always populated first.
+    for slot in ALL_SLOTS:
+        if slot not in FEEDERS:
+            continue
+        if slots[slot].teams is not None:
+            continue
+
+        (feeder1_id, outcome1), (feeder2_id, outcome2) = FEEDERS[slot]
+        f1 = slots.get(feeder1_id)
+        f2 = slots.get(feeder2_id)
+
+        if not (f1 and f1.status == "locked" and f2 and f2.status == "locked"):
+            continue
+
+        team1 = _get_outcome_team(f1, outcome1)
+        team2 = _get_outcome_team(f2, outcome2)
+
+        if team1 and team2:
+            slots[slot] = SlotTemplate(
+                slot_id=slot,
+                teams=[team1, team2],
                 status="open",
             )
 
