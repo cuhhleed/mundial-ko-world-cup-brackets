@@ -10,7 +10,7 @@ from app.bracket.topology import ALL_SLOTS
 from app.config import settings
 from app.db.dynamo import get_table
 from app.logging import get_logger
-from app.models.bracket import Bracket, BracketTemplate, SlotPrediction, SlotTemplate
+from app.models.bracket import Bracket, BracketResponse, BracketTemplate, SlotDetail, SlotPrediction, SlotTemplate
 from app.services.matches import get_all_matches, get_completed_matches
 
 logger = get_logger("brackets")
@@ -90,6 +90,33 @@ def create_bracket(
         total_points=0,
         status="submitted",
         created_at=created_at,
+    )
+
+
+def get_bracket(bracket_id: str) -> Bracket | None:
+    response = get_table(settings.BRACKETS_TABLE).get_item(Key={"bracket_id": bracket_id})
+    item = response.get("Item")
+    if item is None:
+        return None
+    item["predictions"] = {k: SlotPrediction(**v) for k, v in item["predictions"].items()}
+    return Bracket(**item)
+
+
+def build_bracket_response(bracket: Bracket) -> BracketResponse:
+    completed_matches = get_completed_matches()
+    slots: dict[str, SlotDetail] = {}
+    for slot_id, prediction in bracket.predictions.items():
+        match = completed_matches.get(slot_id)
+        result = slot_prediction_from_match(slot_id, match) if match else None
+        slots[slot_id] = SlotDetail(prediction=prediction, result=result, points=None)
+    return BracketResponse(
+        bracket_id=bracket.bracket_id,
+        user_id=bracket.user_id,
+        slots=slots,
+        locked_slots=bracket.locked_slots,
+        total_points=bracket.total_points,
+        status=bracket.status,
+        created_at=bracket.created_at,
     )
 
 

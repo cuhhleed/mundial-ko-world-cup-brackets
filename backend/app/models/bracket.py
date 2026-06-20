@@ -28,3 +28,19 @@ class SlotTemplate(BaseModel):
 
 class BracketTemplate(BaseModel):
     slots: dict[str, SlotTemplate]
+
+
+class SlotDetail(BaseModel):
+    prediction: SlotPrediction
+    result: SlotPrediction | None = None
+    points: int | None = None
+
+
+class BracketResponse(BaseModel):
+    bracket_id: str
+    user_id: str
+    slots: dict[str, SlotDetail]
+    locked_slots: list[str] = []
+    total_points: int = 0
+    status: str
+    created_at: str
