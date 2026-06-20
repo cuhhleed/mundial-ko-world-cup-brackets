@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.logging import configure_logging, get_logger
-from app.routers import health, users
+from app.routers import health, users, brackets
 
 configure_logging()
 logger = get_logger("mundial-ko-api")
@@ -33,3 +33,4 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(users.router)
+app.include_router(brackets.router)
