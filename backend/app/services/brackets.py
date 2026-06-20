@@ -4,11 +4,14 @@ from uuid import uuid4
 import botocore.exceptions
 
 from app.bracket.derivation import validate_bracket
+from app.bracket.merge import MergePredictionsError, merge_predictions, slot_prediction_from_match
 from app.bracket.r32_matchups import load_r32_matchups
+from app.bracket.topology import ALL_SLOTS
 from app.config import settings
 from app.db.dynamo import get_table
 from app.logging import get_logger
-from app.models.bracket import Bracket, SlotPrediction
+from app.models.bracket import Bracket, BracketTemplate, SlotPrediction, SlotTemplate
+from app.services.matches import get_all_matches, get_completed_matches
 
 logger = get_logger("brackets")
 
@@ -28,8 +31,18 @@ def create_bracket(
     predictions: dict[str, SlotPrediction],
 ) -> Bracket:
     r32_matchups = load_r32_matchups()
+    completed_matches = get_completed_matches()
 
-    errors = validate_bracket(predictions, r32_matchups)
+    if completed_matches:
+        try:
+            merged_predictions, locked_slots = merge_predictions(predictions, completed_matches)
+        except MergePredictionsError as e:
+            raise BracketValidationError(e.errors)
+    else:
+        merged_predictions = predictions
+        locked_slots = []
+
+    errors = validate_bracket(merged_predictions, r32_matchups)
     if errors:
         raise BracketValidationError(errors)
 
@@ -38,7 +51,7 @@ def create_bracket(
 
     serialized_predictions = {
         slot: pred.model_dump(exclude_none=True)
-        for slot, pred in predictions.items()
+        for slot, pred in merged_predictions.items()
     }
 
     get_table(settings.BRACKETS_TABLE).put_item(
@@ -46,6 +59,7 @@ def create_bracket(
             "bracket_id": bracket_id,
             "user_id": user_id,
             "predictions": serialized_predictions,
+            "locked_slots": locked_slots,
             "total_points": 0,
             "status": "submitted",
             "created_at": created_at,
@@ -71,8 +85,39 @@ def create_bracket(
     return Bracket(
         bracket_id=bracket_id,
         user_id=user_id,
-        predictions=predictions,
+        predictions=merged_predictions,
+        locked_slots=locked_slots,
         total_points=0,
         status="submitted",
         created_at=created_at,
     )
+
+
+def get_bracket_template() -> BracketTemplate:
+    all_matches = get_all_matches()
+    slots: dict[str, SlotTemplate] = {}
+
+    for slot in ALL_SLOTS:
+        match = all_matches.get(slot)
+        if match and match.status == "completed":
+            result = slot_prediction_from_match(slot, match)
+            slots[slot] = SlotTemplate(
+                slot_id=slot,
+                teams=[match.home_team, match.away_team],
+                status="locked",
+                result=result,
+            )
+        elif match:
+            slots[slot] = SlotTemplate(
+                slot_id=slot,
+                teams=[match.home_team, match.away_team],
+                status="open",
+            )
+        else:
+            slots[slot] = SlotTemplate(
+                slot_id=slot,
+                teams=None,
+                status="open",
+            )
+
+    return BracketTemplate(slots=slots)

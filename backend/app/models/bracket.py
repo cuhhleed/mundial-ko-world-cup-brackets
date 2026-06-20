@@ -13,6 +13,18 @@ class Bracket(BaseModel):
     bracket_id: str
     user_id: str
     predictions: dict[str, SlotPrediction]
+    locked_slots: list[str] = []
     total_points: int = 0
     status: str = "submitted"
     created_at: str
+
+
+class SlotTemplate(BaseModel):
+    slot_id: str
+    teams: list[str] | None
+    status: str
+    result: SlotPrediction | None = None
+
+
+class BracketTemplate(BaseModel):
+    slots: dict[str, SlotTemplate]

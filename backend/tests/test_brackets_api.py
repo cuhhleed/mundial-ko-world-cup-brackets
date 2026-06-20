@@ -1,12 +1,48 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app.config import settings
+from app.db.dynamo import get_table
 from app.models.bracket import SlotPrediction
 from tests.conftest import make_token
 
 
 def sp(teams: list[str], winner: str, **kwargs) -> SlotPrediction:
     return SlotPrediction(teams=teams, winner=winner, **kwargs)
+
+
+def _seed_match(
+    match_id: str,
+    round: str,
+    home: str,
+    away: str,
+    home_score: int | None = None,
+    away_score: int | None = None,
+    pk_home_score: int | None = None,
+    pk_away_score: int | None = None,
+    pk_winner: str | None = None,
+    status: str = "scheduled",
+) -> None:
+    item: dict = {
+        "match_id": match_id,
+        "round": round,
+        "match_number": 1,
+        "home_team": home,
+        "away_team": away,
+        "status": status,
+        "kickoff_time": "2026-06-28T16:00:00Z",
+    }
+    if home_score is not None:
+        item["home_score"] = home_score
+    if away_score is not None:
+        item["away_score"] = away_score
+    if pk_home_score is not None:
+        item["pk_home_score"] = pk_home_score
+    if pk_away_score is not None:
+        item["pk_away_score"] = pk_away_score
+    if pk_winner is not None:
+        item["pk_winner"] = pk_winner
+    get_table(settings.MATCHES_TABLE).put_item(Item=item)
 
 
 def _seed_user(
@@ -162,4 +198,99 @@ class TestCreateBracket:
             "/api/brackets",
             json={"predictions": valid_predictions},
         )
+        assert resp.status_code == 401
+
+
+class TestLateBracket:
+    def test_late_bracket_with_locked_slots_returns_201(
+        self, client: TestClient, valid_predictions
+    ):
+        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
+        _seed_match("R32-2", "R32", "T03", "T04", home_score=1, away_score=0, status="completed")
+
+        _seed_user(client)
+        token = make_token()
+        partial = {k: v for k, v in valid_predictions.items() if k not in {"R32-1", "R32-2"}}
+        resp = client.post(
+            "/api/brackets",
+            json={"predictions": partial},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert set(data["locked_slots"]) == {"R32-1", "R32-2"}
+        assert len(data["predictions"]) == 32
+
+    def test_prediction_for_locked_slot_returns_400(
+        self, client: TestClient, valid_predictions
+    ):
+        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
+
+        _seed_user(client)
+        token = make_token()
+        resp = client.post(
+            "/api/brackets",
+            json={"predictions": valid_predictions},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 400
+
+    def test_missing_prediction_for_open_slot_returns_400(
+        self, client: TestClient, valid_predictions
+    ):
+        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
+
+        _seed_user(client)
+        token = make_token()
+        # Remove R32-1 (locked) AND R32-3 (open, missing)
+        partial = {
+            k: v for k, v in valid_predictions.items() if k not in {"R32-1", "R32-3"}
+        }
+        resp = client.post(
+            "/api/brackets",
+            json={"predictions": partial},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 400
+
+
+class TestBracketTemplate:
+    def test_template_with_no_matches_all_open(self, client: TestClient):
+        _seed_user(client)
+        token = make_token()
+        resp = client.get(
+            "/api/brackets/template",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "slots" in data
+        for slot_data in data["slots"].values():
+            assert slot_data["status"] == "open"
+            assert slot_data["result"] is None
+
+    def test_template_shows_correct_locked_and_open_statuses(self, client: TestClient):
+        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
+        _seed_match("R32-2", "R32", "T03", "T04", status="scheduled")
+
+        _seed_user(client)
+        token = make_token()
+        resp = client.get(
+            "/api/brackets/template",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        slots = data["slots"]
+
+        assert slots["R32-1"]["status"] == "locked"
+        assert slots["R32-1"]["result"] is not None
+        assert slots["R32-1"]["result"]["winner"] == "T01"
+
+        assert slots["R32-2"]["status"] == "open"
+        assert slots["R32-2"]["teams"] == ["T03", "T04"]
+        assert slots["R32-2"]["result"] is None
+
+    def test_template_unauthenticated_returns_401(self, client: TestClient):
+        resp = client.get("/api/brackets/template")
         assert resp.status_code == 401
