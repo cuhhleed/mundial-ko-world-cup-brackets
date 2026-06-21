@@ -6,6 +6,7 @@ import botocore.exceptions
 from app.bracket.derivation import validate_bracket
 from app.bracket.merge import MergePredictionsError, merge_predictions, slot_prediction_from_match
 from app.bracket.r32_matchups import load_r32_matchups
+from app.bracket.scoring import score_slot
 from app.bracket.topology import ALL_SLOTS, FEEDERS
 from app.config import settings
 from app.db.dynamo import get_table
@@ -105,16 +106,21 @@ def get_bracket(bracket_id: str) -> Bracket | None:
 def build_bracket_response(bracket: Bracket) -> BracketResponse:
     completed_matches = get_completed_matches()
     slots: dict[str, SlotDetail] = {}
+    total_points = 0
     for slot_id, prediction in bracket.predictions.items():
         match = completed_matches.get(slot_id)
         result = slot_prediction_from_match(slot_id, match) if match else None
-        slots[slot_id] = SlotDetail(prediction=prediction, result=result, points=None)
+        slot_score = score_slot(slot_id, prediction, result, bracket.locked_slots)
+        points = slot_score.total if slot_score.scored else None
+        if slot_score.scored:
+            total_points += slot_score.total
+        slots[slot_id] = SlotDetail(prediction=prediction, result=result, points=points)
     return BracketResponse(
         bracket_id=bracket.bracket_id,
         user_id=bracket.user_id,
         slots=slots,
         locked_slots=bracket.locked_slots,
-        total_points=bracket.total_points,
+        total_points=total_points,
         status=bracket.status,
         created_at=bracket.created_at,
     )

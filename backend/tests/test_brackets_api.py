@@ -330,6 +330,37 @@ class TestGetMyBracket:
         assert resp.status_code == 401
 
 
+class TestScoringIntegration:
+    def test_completed_r32_match_scores_correct_winner(
+        self, client: TestClient, valid_predictions
+    ):
+        # Seed a completed R32-1 match where T01 wins 2-0 (T01 is the predicted winner)
+        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
+
+        _seed_user()
+        token = make_token()
+        # R32-1 is completed so omit it from the prediction payload
+        partial = {k: v for k, v in valid_predictions.items() if k != "R32-1"}
+        post_resp = client.post(
+            "/api/brackets",
+            json={"predictions": partial},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert post_resp.status_code == 201
+        bracket_id = post_resp.json()["bracket_id"]
+
+        resp = client.get(f"/api/brackets/{bracket_id}")
+        assert resp.status_code == 200
+        data = resp.json()
+
+        # R32-1 is locked — scored=True but 0 pts
+        r32_1 = data["slots"]["R32-1"]
+        assert r32_1["points"] == 0
+
+        # total_points reflects locked slot (0 pts for locked) plus all other unscored slots (None)
+        assert data["total_points"] == 0
+
+
 class TestBracketTemplate:
     def test_template_with_no_matches_all_open(self, client: TestClient):
         resp = client.get("/api/brackets/template")
