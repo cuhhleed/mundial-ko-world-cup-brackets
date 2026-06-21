@@ -1,5 +1,6 @@
 import { useAuth } from '@/auth/AuthContext'
 import { BracketCreator } from '@/bracket/BracketCreator'
+import { BracketViewer } from '@/bracket/BracketViewer'
 
 export function Bracket() {
   const { isLoading, isAuthenticated } = useAuth()
@@ -13,11 +14,10 @@ export function Bracket() {
   }
 
   if (isAuthenticated) {
-    // Bracket viewer for signed-in users with existing bracket (S7)
     return (
       <div className="space-y-4">
         <h1 className="text-3xl font-bold">Your Bracket</h1>
-        <p className="text-gray-500">Bracket viewer coming in S7.</p>
+        <BracketViewer />
       </div>
     )
   }

@@ -1,5 +1,21 @@
 // ── API shapes (match backend JSON) ──────────────────────────────────────────
 
+export type ApiSlotDetail = {
+  prediction: ApiSlotPrediction
+  result: ApiSlotPrediction | null
+  points: number | null
+}
+
+export type ApiBracketResponse = {
+  bracket_id: string
+  user_id: string
+  slots: Record<string, ApiSlotDetail>
+  locked_slots: string[]
+  total_points: number
+  status: string
+  created_at: string
+}
+
 export type ApiSlotPrediction = {
   teams: string[]
   winner: string
