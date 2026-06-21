@@ -12,8 +12,11 @@ router = APIRouter(prefix="/api/users")
 
 
 @router.get("/me", response_model=UserRecord)
-def get_me(user: AuthenticatedUser = Depends(require_user)) -> UserRecord | None:
-    return users.get(user.user_id)
+def get_me(user: AuthenticatedUser = Depends(require_user)) -> UserRecord:
+    record = users.get(user.user_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return record
 
 
 @router.patch("/me", response_model=UserRecord)

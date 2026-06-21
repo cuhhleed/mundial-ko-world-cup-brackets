@@ -21,6 +21,7 @@ type AuthContextValue = {
   isLoading: boolean
   isAuthenticated: boolean
   authenticateWithGoogle: (idToken: string) => Promise<void>
+  signupWithBracket: (idToken: string, predictions: Record<string, unknown>) => Promise<void>
   logout: () => void
   updateDisplayName: (name: string) => Promise<void>
 }
@@ -74,7 +75,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hydrate()
   }, [])
 
+  // Login-only: verifies the Google JWT, checks the user exists, then fetches their record.
+  // Throws 'NO_ACCOUNT' if the user has not signed up yet.
   const authenticateWithGoogle = useCallback(async (idToken: string) => {
+    const { exists } = await api.post<{ exists: boolean }>('/api/auth/check', { token: idToken })
+    if (!exists) {
+      throw new Error('NO_ACCOUNT')
+    }
     saveToken(idToken)
     setAuthToken(idToken)
     const record = await api.get<UserRecord>('/api/users/me')
@@ -84,6 +91,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       displayName: record.display_name,
     })
   }, [])
+
+  // Signup: creates user + bracket atomically via POST /api/auth/signup.
+  const signupWithBracket = useCallback(
+    async (idToken: string, predictions: Record<string, unknown>) => {
+      const response = await api.post<{ user: UserRecord; bracket: unknown }>(
+        '/api/auth/signup',
+        { token: idToken, predictions },
+      )
+      saveToken(idToken)
+      setAuthToken(idToken)
+      setUser({
+        id: response.user.user_id,
+        email: response.user.email,
+        displayName: response.user.display_name,
+      })
+    },
+    [],
+  )
 
   const logout = doLogout
 
@@ -99,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: user !== null,
         authenticateWithGoogle,
+        signupWithBracket,
         logout,
         updateDisplayName,
       }}

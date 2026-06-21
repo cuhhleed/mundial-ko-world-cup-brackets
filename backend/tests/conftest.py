@@ -90,8 +90,10 @@ def clear_seen_cache():
 
 @pytest.fixture()
 def mock_dynamo(monkeypatch):
-    """Spin up a moto DynamoDB mock and create the Users table."""
+    """Spin up a moto DynamoDB mock and create the Users, Brackets, and Matches tables."""
     monkeypatch.setattr(settings, "USERS_TABLE", "mundial-users-test")
+    monkeypatch.setattr(settings, "BRACKETS_TABLE", "mundial-brackets-test")
+    monkeypatch.setattr(settings, "MATCHES_TABLE", "mundial-matches-test")
     monkeypatch.setattr(settings, "GOOGLE_CLIENT_ID", TEST_AUD)
     # Force the app's boto3 resource onto moto's mocked backend instead of the
     # dynamodb-local endpoint that .env injects into settings.
@@ -104,7 +106,9 @@ def mock_dynamo(monkeypatch):
 
         _dynamo_module._resource = None
 
-        boto3.resource("dynamodb", region_name="us-east-1").create_table(
+        dynamo = boto3.resource("dynamodb", region_name="us-east-1")
+
+        dynamo.create_table(
             TableName="mundial-users-test",
             KeySchema=[{"AttributeName": "user_id", "KeyType": "HASH"}],
             AttributeDefinitions=[
@@ -112,6 +116,37 @@ def mock_dynamo(monkeypatch):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
+
+        dynamo.create_table(
+            TableName="mundial-brackets-test",
+            KeySchema=[{"AttributeName": "bracket_id", "KeyType": "HASH"}],
+            AttributeDefinitions=[
+                {"AttributeName": "bracket_id", "AttributeType": "S"},
+                {"AttributeName": "user_id", "AttributeType": "S"},
+            ],
+            GlobalSecondaryIndexes=[{
+                "IndexName": "user_id-index",
+                "KeySchema": [{"AttributeName": "user_id", "KeyType": "HASH"}],
+                "Projection": {"ProjectionType": "ALL"},
+            }],
+            BillingMode="PAY_PER_REQUEST",
+        )
+
+        dynamo.create_table(
+            TableName="mundial-matches-test",
+            KeySchema=[{"AttributeName": "match_id", "KeyType": "HASH"}],
+            AttributeDefinitions=[
+                {"AttributeName": "match_id", "AttributeType": "S"},
+                {"AttributeName": "round", "AttributeType": "S"},
+            ],
+            GlobalSecondaryIndexes=[{
+                "IndexName": "round-index",
+                "KeySchema": [{"AttributeName": "round", "KeyType": "HASH"}],
+                "Projection": {"ProjectionType": "ALL"},
+            }],
+            BillingMode="PAY_PER_REQUEST",
+        )
+
         yield
 
     # Restore the dynamo resource so subsequent tests start clean.

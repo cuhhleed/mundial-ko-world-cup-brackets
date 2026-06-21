@@ -11,6 +11,17 @@ export function setOnUnauthorized(fn: () => Promise<string | null>): void {
   onUnauthorized = fn
 }
 
+export class ApiError extends Error {
+  status: number
+  body: unknown
+
+  constructor(status: number, statusText: string, body: unknown) {
+    super(`API error: ${status} ${statusText}`)
+    this.status = status
+    this.body = body
+  }
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -35,11 +46,12 @@ async function request<T>(
     // No refresh token (ADR-004b): notify the auth context to clear state and
     // re-prompt Google Sign-In. The caller will receive a thrown error.
     await onUnauthorized()
-    throw new Error('API error: 401 Unauthorized')
+    throw new ApiError(401, 'Unauthorized', null)
   }
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status} ${response.statusText}`)
+    const responseBody = await response.json().catch(() => null)
+    throw new ApiError(response.status, response.statusText, responseBody)
   }
 
   return response.json()

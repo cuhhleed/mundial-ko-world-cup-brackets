@@ -1,41 +1,41 @@
-import { useState } from 'react'
-import { Link, Outlet } from 'react-router'
-import { useAuth } from '@/auth/AuthContext'
+import { useState } from "react";
+import { Link, Outlet } from "react-router";
+import { useAuth } from "@/auth/AuthContext";
 
-const DISPLAY_NAME_RE = /^[A-Za-z0-9 ]{3,30}$/
+const DISPLAY_NAME_RE = /^[A-Za-z0-9 ]{3,30}$/;
 
 function DisplayNameEdit({ name }: { name: string }) {
-  const { updateDisplayName } = useAuth()
-  const [editing, setEditing] = useState(false)
-  const [value, setValue] = useState(name)
-  const [validationError, setValidationError] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const { updateDisplayName } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(name);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   function startEdit() {
-    setValue(name)
-    setValidationError(null)
-    setEditing(true)
+    setValue(name);
+    setValidationError(null);
+    setEditing(true);
   }
 
   function cancel() {
-    setEditing(false)
-    setValidationError(null)
+    setEditing(false);
+    setValidationError(null);
   }
 
   async function save() {
-    const trimmed = value.trim()
+    const trimmed = value.trim();
     if (!DISPLAY_NAME_RE.test(trimmed)) {
-      setValidationError('3-30 characters, letters, numbers, and spaces only')
-      return
+      setValidationError("3-30 characters, letters, numbers, and spaces only");
+      return;
     }
-    setIsSaving(true)
+    setIsSaving(true);
     try {
-      await updateDisplayName(trimmed)
-      setEditing(false)
+      await updateDisplayName(trimmed);
+      setEditing(false);
     } catch {
-      setValidationError('Failed to save')
+      setValidationError("Failed to save");
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
@@ -49,7 +49,7 @@ function DisplayNameEdit({ name }: { name: string }) {
       >
         {name}
       </button>
-    )
+    );
   }
 
   return (
@@ -63,8 +63,8 @@ function DisplayNameEdit({ name }: { name: string }) {
           maxLength={30}
           autoFocus
           onKeyDown={(e) => {
-            if (e.key === 'Enter') save()
-            if (e.key === 'Escape') cancel()
+            if (e.key === "Enter") save();
+            if (e.key === "Escape") cancel();
           }}
         />
         {validationError && (
@@ -87,20 +87,23 @@ function DisplayNameEdit({ name }: { name: string }) {
         Cancel
       </button>
     </div>
-  )
+  );
 }
 
 function NavAuth() {
-  const { user, isLoading, isAuthenticated, logout } = useAuth()
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
 
-  if (isLoading) return null
+  if (isLoading) return null;
 
   if (!isAuthenticated || !user) {
     return (
-      <Link to="/login" className="text-blue-600 font-medium hover:text-blue-700">
+      <Link
+        to="/login"
+        className="text-blue-600 font-medium hover:text-blue-700"
+      >
         Log In
       </Link>
-    )
+    );
   }
 
   return (
@@ -109,15 +112,24 @@ function NavAuth() {
       <button
         type="button"
         onClick={logout}
-        className="text-gray-500 text-sm hover:text-gray-700"
+        className="text-red-500 text-sm hover:text-red-700"
       >
         Log Out
       </button>
     </div>
-  )
+  );
 }
 
+const NAV_LINKS = [
+  { to: "/", label: "Home" },
+  { to: "/bracket", label: "Bracket" },
+  { to: "/leaderboard", label: "Leaderboard" },
+  { to: "/live", label: "Live" },
+];
+
 export function RootLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow">
@@ -128,28 +140,99 @@ export function RootLayout() {
                 Mundial KO
               </Link>
             </div>
-            <div className="flex items-center space-x-8">
-              <Link to="/" className="text-gray-700 hover:text-gray-900">
-                Home
-              </Link>
-              <Link to="/bracket" className="text-gray-700 hover:text-gray-900">
-                Bracket
-              </Link>
-              <Link to="/leaderboard" className="text-gray-700 hover:text-gray-900">
-                Leaderboard
-              </Link>
-              <Link to="/live" className="text-gray-700 hover:text-gray-900">
-                Live
-              </Link>
+
+            {/* Desktop nav */}
+            <div className="hidden md:flex items-center space-x-8">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="text-gray-700 hover:text-gray-900"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <NavAuth />
+            </div>
+
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden flex items-center p-2 text-gray-600 hover:text-gray-900"
+              aria-label="Open menu"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            className="fixed inset-0 bg-black/30"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="fixed inset-y-0 right-0 w-64 bg-white shadow-xl flex flex-col">
+            <div className="flex items-center justify-between px-4 h-16 border-b">
+              <span className="text-lg font-bold text-blue-600">Menu</span>
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(false)}
+                className="p-2 text-gray-500 hover:text-gray-900"
+                aria-label="Close menu"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="flex flex-col py-4">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={() => setSidebarOpen(false)}
+                  className="px-6 py-3 text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+            <div className="mt-auto border-t px-6 py-4">
               <NavAuth />
             </div>
           </div>
         </div>
-      </nav>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Outlet />
       </main>
     </div>
-  )
+  );
 }

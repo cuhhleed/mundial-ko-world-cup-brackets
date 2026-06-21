@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '@/auth/AuthContext'
@@ -8,6 +8,7 @@ export function Login() {
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? '/bracket'
+  const [loginError, setLoginError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -25,11 +26,15 @@ export function Login() {
 
   async function handleSuccess(credentialResponse: { credential?: string }) {
     if (!credentialResponse.credential) return
+    setLoginError(null)
     try {
       await authenticateWithGoogle(credentialResponse.credential)
       navigate(from, { replace: true })
-    } catch {
-      // authenticateWithGoogle failure (e.g. network) — GIS button stays visible
+    } catch (err) {
+      if (err instanceof Error && err.message === 'NO_ACCOUNT') {
+        setLoginError('No account found. Submit a bracket to sign up.')
+      }
+      // Other errors (network, API): Google button stays visible
     }
   }
 
@@ -41,10 +46,11 @@ export function Login() {
           <GoogleLogin
             onSuccess={handleSuccess}
             onError={() => {/* GIS handles its own error UI */}}
-            auto_select
-            useOneTap
           />
         </div>
+        {loginError && (
+          <p className="text-red-600 text-sm mt-4 text-center">{loginError}</p>
+        )}
       </div>
     </div>
   )

@@ -20,10 +20,11 @@ def reset_seen_cache() -> None:
     _seen.clear()
 
 
-def ensure_exists(user_id: str, email: str) -> None:
-    if user_id in _seen:
-        return
+class UserAlreadyExistsError(Exception):
+    pass
 
+
+def create(user_id: str, email: str) -> UserRecord:
     display_name = generate_display_name()
     created_at = datetime.now(timezone.utc).isoformat()
 
@@ -37,13 +38,19 @@ def ensure_exists(user_id: str, email: str) -> None:
             },
             ConditionExpression="attribute_not_exists(user_id)",
         )
-        logger.info("user_autocreated", user_id=user_id)
     except botocore.exceptions.ClientError as e:
-        if e.response["Error"]["Code"] != "ConditionalCheckFailedException":
-            raise
-        # Record already exists — swallow and continue.
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            raise UserAlreadyExistsError()
+        raise
 
     _seen.add(user_id)
+    logger.info("user_created", user_id=user_id)
+    return UserRecord(
+        user_id=user_id,
+        email=email,
+        display_name=display_name,
+        created_at=created_at,
+    )
 
 
 def get(user_id: str) -> UserRecord | None:

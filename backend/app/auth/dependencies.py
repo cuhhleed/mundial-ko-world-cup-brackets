@@ -4,7 +4,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.auth.verifier import GoogleJwtVerifier, InvalidTokenError, get_verifier
 from app.logging import get_logger
 from app.models.user import AuthenticatedUser
-from app.services import users
 
 logger = get_logger("auth")
 
@@ -39,6 +38,5 @@ def require_user(
     # AuthConfigError and any unexpected exception intentionally propagate → 500.
 
     user = AuthenticatedUser(user_id=claims["sub"], email=claims["email"])
-    users.ensure_exists(user.user_id, user.email)
     request.state.user = user
     return user
