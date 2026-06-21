@@ -1,36 +1,63 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { GoogleLogin } from '@react-oauth/google'
+import { api, ApiError } from '@/api/client'
 import { useAuth } from '@/auth/AuthContext'
+import type { SlotPredictionPayload } from '@/bracket/payload'
 
 type Props = {
   isOpen: boolean
+  predictions: Record<string, SlotPredictionPayload>
   onClose: () => void
   onAuthenticated: () => void
 }
 
 type ModalStep = 'confirm' | 'google'
 
-export function SignUpModal({ isOpen, onClose, onAuthenticated }: Props) {
-  const { authenticateWithGoogle } = useAuth()
+export function SignUpModal({ isOpen, predictions, onClose, onAuthenticated }: Props) {
+  const { signupWithBracket } = useAuth()
   const [step, setStep] = useState<ModalStep>('confirm')
   const [authError, setAuthError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (!isOpen) {
       setStep('confirm')
       setAuthError(null)
+      setIsSubmitting(false)
     }
   }, [isOpen])
 
   async function handleGoogleSuccess(credentialResponse: { credential?: string }) {
     if (!credentialResponse.credential) return
+    const idToken = credentialResponse.credential
     setAuthError(null)
+    setIsSubmitting(true)
+
     try {
-      await authenticateWithGoogle(credentialResponse.credential)
+      const { exists } = await api.post<{ exists: boolean }>('/api/auth/check', { token: idToken })
+      if (exists) {
+        setAuthError('This email is already registered. Log in instead.')
+        setIsSubmitting(false)
+        return
+      }
+
+      await signupWithBracket(idToken, predictions)
       onAuthenticated()
-    } catch {
-      setAuthError('Something went wrong. Please try again.')
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 400) {
+        const detail = (err.body as { detail?: string[] | string } | null)?.detail
+        if (Array.isArray(detail)) {
+          setAuthError(detail.join(' '))
+        } else if (typeof detail === 'string') {
+          setAuthError(detail)
+        } else {
+          setAuthError('Invalid bracket. Please start over and try again.')
+        }
+      } else {
+        setAuthError('Something went wrong. Please try again.')
+      }
+      setIsSubmitting(false)
     }
   }
 
@@ -77,10 +104,17 @@ export function SignUpModal({ isOpen, onClose, onAuthenticated }: Props) {
               Sign in with Google to save your bracket.
             </p>
             <div className="flex justify-center">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setAuthError('Google sign-in failed. Please try again.')}
-              />
+              {isSubmitting ? (
+                <div className="flex items-center gap-2 text-gray-500 text-sm">
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                  Submitting…
+                </div>
+              ) : (
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setAuthError('Google sign-in failed. Please try again.')}
+                />
+              )}
             </div>
             {authError && (
               <p className="text-red-600 text-sm mt-3 text-center">{authError}</p>

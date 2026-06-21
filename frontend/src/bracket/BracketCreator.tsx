@@ -53,7 +53,6 @@ export function BracketCreator() {
       <BracketPreview
         bracketState={bracketState}
         onStartOver={handleStartOver}
-        // onSubmit wired in S6
       />
     )
   }

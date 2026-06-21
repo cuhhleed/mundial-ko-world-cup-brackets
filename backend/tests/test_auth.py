@@ -13,6 +13,7 @@ from app.auth.verifier import get_verifier
 from app.config import settings
 from app.db.dynamo import get_table
 from app.main import app
+from app.services.users import create as create_user
 from tests.conftest import TEST_AUD, TEST_ISS, make_token
 
 # Regex that matches the auto-generated display_name: two CamelCase words + 1-2 digits.
@@ -20,7 +21,8 @@ DISPLAY_NAME_RE = re.compile(r"^[A-Za-z]+[A-Za-z]+\d{1,2}$")
 
 
 class TestGetMe:
-    def test_valid_token_returns_200_with_user(self, client: TestClient):
+    def test_valid_token_existing_user_returns_200(self, client: TestClient):
+        create_user("abc-123", "player@example.com")
         token = make_token(sub="abc-123", email="player@example.com")
         resp = client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
@@ -28,13 +30,15 @@ class TestGetMe:
         assert data["user_id"] == "abc-123"
         assert data["email"] == "player@example.com"
 
-    def test_valid_token_creates_dynamo_record_with_display_name(
+    def test_valid_token_no_user_returns_404(self, client: TestClient):
+        token = make_token(sub="no-such-user", email="nobody@example.com")
+        resp = client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 404
+
+    def test_signup_creates_dynamo_record_with_display_name(
         self, client: TestClient, mock_dynamo
     ):
-        token = make_token(sub="abc-123", email="player@example.com")
-        resp = client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
-        assert resp.status_code == 200
-
+        create_user("abc-123", "player@example.com")
         item = get_table(settings.USERS_TABLE).get_item(Key={"user_id": "abc-123"}).get("Item")
         assert item is not None
         assert item["user_id"] == "abc-123"
@@ -100,8 +104,6 @@ class TestGetMe:
 
     def test_accounts_google_com_issuer_accepted(self, mock_dynamo, override_verifier):
         """Both Google issuer strings must be accepted."""
-        # Override verifier already accepts TEST_ISS ("https://accounts.google.com").
-        # Build a verifier that accepts the short-form issuer and verify it also works.
         from app.auth.verifier import GoogleJwtVerifier
         from tests.conftest import _FAKE_JWK_CLIENT
 
@@ -112,7 +114,8 @@ class TestGetMe:
         )
         app.dependency_overrides[get_verifier] = lambda: alt_verifier
         try:
-            alt_token = make_token(iss="accounts.google.com")
+            create_user("alt-user", "alt@example.com")
+            alt_token = make_token(sub="alt-user", iss="accounts.google.com")
             alt_client = TestClient(app)
             resp = alt_client.get(
                 "/api/users/me", headers={"Authorization": f"Bearer {alt_token}"}
@@ -125,9 +128,10 @@ class TestGetMe:
         resp = client.get("/health")
         assert resp.status_code == 200
 
-    def test_idempotency_two_requests_create_one_record(
+    def test_get_me_returns_same_user_on_repeated_calls(
         self, client: TestClient, mock_dynamo
     ):
+        create_user("idem-user", "idem@example.com")
         token = make_token(sub="idem-user", email="idem@example.com")
         headers = {"Authorization": f"Bearer {token}"}
 
