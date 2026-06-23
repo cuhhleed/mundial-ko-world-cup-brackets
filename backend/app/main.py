@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.db.cache import connect as cache_connect, disconnect as cache_disconnect
 from app.logging import configure_logging, get_logger
 from app.routers import auth, brackets, health, users
 
@@ -18,7 +19,9 @@ async def lifespan(app: FastAPI):
         region=settings.AWS_REGION,
         dynamo_endpoint=settings.DYNAMODB_ENDPOINT_URL or "AWS default",
     )
+    await cache_connect()
     yield
+    await cache_disconnect()
 
 
 app = FastAPI(title="mundial-ko-api", lifespan=lifespan)

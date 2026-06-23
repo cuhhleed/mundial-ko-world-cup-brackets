@@ -5,10 +5,26 @@ services:
       - "8001:8000"
     command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
 
+  valkey:
+    image: valkey/valkey:9-alpine
+    ports:
+      - "6379:6379"
+    command: valkey-server --save "" --appendonly no
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   api:
     build: ./backend
     ports:
       - "8000:8000"
     env_file: ./backend/.env
+    environment:
+      REDIS_ENDPOINT: valkey
     depends_on:
-      - dynamodb-local
+      dynamodb-local:
+        condition: service_started
+      valkey:
+        condition: service_healthy

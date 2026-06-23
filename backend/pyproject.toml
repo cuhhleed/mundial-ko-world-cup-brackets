@@ -9,6 +9,7 @@ boto3 = "^1.43.29"
 pydantic-settings = "^2.14.1"
 structlog = "^26.1.0"
 pyjwt = {extras = ["crypto"], version = "^2.13.0"}
+redis = {version = "^5.3", extras = ["hiredis"]}
 
 
 [project]

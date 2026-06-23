@@ -153,6 +153,19 @@ def mock_dynamo(monkeypatch):
     _dynamo_module._resource = None
 
 
+async def _noop_coro(*args, **kwargs):
+    pass
+
+
+@pytest.fixture()
+def mock_cache(monkeypatch):
+    """Prevent the lifespan from trying to ping Valkey during tests."""
+    import app.db.cache as _cache_module
+
+    monkeypatch.setattr(_cache_module, "connect", _noop_coro)
+    monkeypatch.setattr(_cache_module, "disconnect", _noop_coro)
+
+
 @pytest.fixture()
 def override_verifier():
     """Replace the real GoogleJwtVerifier with a test instance backed by the fake JWK client."""
@@ -167,6 +180,6 @@ def override_verifier():
 
 
 @pytest.fixture()
-def client(mock_dynamo, override_verifier):
-    """TestClient with moto DynamoDB and the fake verifier wired in."""
+def client(mock_dynamo, mock_cache, override_verifier):
+    """TestClient with moto DynamoDB, mocked cache, and the fake verifier wired in."""
     return TestClient(app)
