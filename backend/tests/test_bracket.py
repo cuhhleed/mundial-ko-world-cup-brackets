@@ -2,13 +2,13 @@ import copy
 
 import pytest
 
-from app.models.bracket import SlotPrediction
 from app.bracket.derivation import (
-    derive_matchup,
     derive_all_matchups,
+    derive_matchup,
     predicted_loser,
     validate_bracket,
 )
+from app.models.bracket import SlotPrediction
 
 
 def sp(teams: list[str], winner: str, **kwargs) -> SlotPrediction:

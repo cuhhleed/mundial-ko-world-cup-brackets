@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
     AWS_ACCESS_KEY_ID: str = "DUMMYIDEXAMPLE"
     AWS_SECRET_ACCESS_KEY: str = "DUMMYSECRETANDKEYEXAMPLE"
+    ESPN_BASE_URL: str = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world"
 
     model_config = {"env_file": ".env"}
 

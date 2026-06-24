@@ -1,5 +1,5 @@
-from app.models.bracket import SlotPrediction
 from app.bracket.topology import ALL_SLOTS, FEEDERS, SCORE_BEARING_SLOTS
+from app.models.bracket import SlotPrediction
 
 
 def predicted_loser(slot: str, predictions: dict[str, SlotPrediction]) -> str | None:

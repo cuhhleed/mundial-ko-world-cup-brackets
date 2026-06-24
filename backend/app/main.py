@@ -4,7 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.db.cache import connect as cache_connect, disconnect as cache_disconnect
+from app.db.cache import connect as cache_connect
+from app.db.cache import disconnect as cache_disconnect
 from app.logging import configure_logging, get_logger
 from app.routers import auth, brackets, health, users
 

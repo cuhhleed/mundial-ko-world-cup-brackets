@@ -1,6 +1,6 @@
 import pytest
 
-from app.bracket.scoring import SlotScore, score_slot
+from app.bracket.scoring import score_slot
 from app.models.bracket import SlotPrediction
 
 

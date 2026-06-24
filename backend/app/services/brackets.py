@@ -11,7 +11,14 @@ from app.bracket.topology import ALL_SLOTS, FEEDERS
 from app.config import settings
 from app.db.dynamo import get_table
 from app.logging import get_logger
-from app.models.bracket import Bracket, BracketResponse, BracketTemplate, SlotDetail, SlotPrediction, SlotTemplate
+from app.models.bracket import (
+    Bracket,
+    BracketResponse,
+    BracketTemplate,
+    SlotDetail,
+    SlotPrediction,
+    SlotTemplate,
+)
 from app.services.matches import get_all_matches, get_completed_matches
 
 logger = get_logger("brackets")
