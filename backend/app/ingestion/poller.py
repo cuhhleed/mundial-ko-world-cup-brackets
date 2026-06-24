@@ -22,7 +22,11 @@ class IngestionPoller:
     async def run(self, shutdown: asyncio.Event) -> None:
         logger.info("poller_starting")
 
-        await asyncio.to_thread(load_initial_schedule, "20260628", "20260719")
+        if await self._run_or_shutdown(
+            asyncio.to_thread(load_initial_schedule, "20260628", "20260719"),
+            shutdown,
+        ):
+            return
 
         while not shutdown.is_set():
             sleep_duration = await asyncio.to_thread(self._compute_sleep_duration)
@@ -34,9 +38,31 @@ class IngestionPoller:
             if shutdown.is_set():
                 break
 
-            await self._poll_cycle()
+            if await self._run_or_shutdown(self._poll_cycle(), shutdown):
+                break
 
         logger.info("poller_stopped")
+
+    async def _run_or_shutdown(
+        self, task_coro: asyncio.coroutines, shutdown: asyncio.Event
+    ) -> bool:
+        """Run *task_coro* but return True immediately if *shutdown* fires first."""
+        task = asyncio.ensure_future(task_coro)
+        waiter = asyncio.ensure_future(shutdown.wait())
+
+        done, pending = await asyncio.wait(
+            {task, waiter}, return_when=asyncio.FIRST_COMPLETED
+        )
+
+        for p in pending:
+            p.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await p
+
+        if task in done and task.exception():
+            raise task.exception()
+
+        return shutdown.is_set()
 
     def _compute_sleep_duration(self) -> float:
         poll_interval = float(settings.INGESTION_POLL_INTERVAL)
