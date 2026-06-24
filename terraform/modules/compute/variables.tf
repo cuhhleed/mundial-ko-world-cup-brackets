@@ -163,3 +163,36 @@ variable "google_client_id" {
   description = "Google OAuth client ID (token audience for ID-token validation)"
   type        = string
 }
+
+# ---------------------------------------------------------------------------
+# Ingestion / monitoring
+# ---------------------------------------------------------------------------
+
+variable "alert_email" {
+  description = "Email address for ingestion alarm notifications"
+  type        = string
+}
+
+variable "ingestion_poll_interval" {
+  description = "Seconds between poll cycles when matches are live"
+  type        = number
+  default     = 60
+}
+
+variable "ingestion_pre_kickoff_buffer" {
+  description = "Seconds before kickoff to start polling"
+  type        = number
+  default     = 300
+}
+
+variable "ingestion_heartbeat_interval" {
+  description = "Seconds between heartbeat wakeups when no matches are imminent"
+  type        = number
+  default     = 3600
+}
+
+variable "cloudwatch_namespace" {
+  description = "CloudWatch namespace for custom ingestion metrics"
+  type        = string
+  default     = "MundialKO"
+}

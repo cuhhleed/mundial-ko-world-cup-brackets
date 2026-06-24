@@ -67,3 +67,13 @@ output "route53_zone_id" {
   description = "ID of the Route 53 hosted zone for the domain (passed to frontend module)"
   value       = data.aws_route53_zone.main.zone_id
 }
+
+output "ingestion_task_definition_family" {
+  description = "Family name of the ingestion ECS task definition"
+  value       = aws_ecs_task_definition.ingestion.family
+}
+
+output "ingestion_service_name" {
+  description = "Name of the ingestion ECS service"
+  value       = aws_ecs_service.ingestion.name
+}

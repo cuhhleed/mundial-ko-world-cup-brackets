@@ -28,3 +28,16 @@ services:
         condition: service_started
       valkey:
         condition: service_healthy
+
+  ingestion:
+    build: ./backend
+    command: ["python", "-m", "app.ingestion.service"]
+    env_file: ./backend/.env
+    environment:
+      REDIS_ENDPOINT: valkey
+      INGESTION_POLL_INTERVAL: "10"
+    depends_on:
+      dynamodb-local:
+        condition: service_started
+      valkey:
+        condition: service_healthy

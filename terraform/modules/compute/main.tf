@@ -60,6 +60,15 @@ resource "aws_cloudwatch_log_group" "ecs" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "ingestion" {
+  name              = "/ecs/${var.project_name}-${var.environment}-ingestion"
+  retention_in_days = 30
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-ingestion-logs"
+  }
+}
+
 # ---------------------------------------------------------------------------
 # ACM Certificate
 # ---------------------------------------------------------------------------
@@ -265,7 +274,15 @@ data "aws_iam_policy_document" "ecs_task" {
     resources = [
       aws_cloudwatch_log_group.ecs.arn,
       "${aws_cloudwatch_log_group.ecs.arn}:*",
+      aws_cloudwatch_log_group.ingestion.arn,
+      "${aws_cloudwatch_log_group.ingestion.arn}:*",
     ]
+  }
+
+  statement {
+    sid       = "CloudWatchMetricsAccess"
+    actions   = ["cloudwatch:PutMetricData"]
+    resources = ["*"]
   }
 }
 
@@ -372,5 +389,73 @@ resource "aws_ecs_service" "api" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-api"
+  }
+}
+
+resource "aws_ecs_task_definition" "ingestion" {
+  family                   = "${var.project_name}-${var.environment}-ingestion"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "${var.project_name}-${var.environment}-ingestion"
+      image     = "${aws_ecr_repository.api.repository_url}:latest"
+      essential = true
+      command   = ["python", "-m", "app.ingestion.service"]
+
+      environment = [
+        { name = "ENVIRONMENT", value = var.environment },
+        { name = "AWS_REGION", value = var.region },
+        { name = "USERS_TABLE", value = var.users_table_name },
+        { name = "BRACKETS_TABLE", value = var.brackets_table_name },
+        { name = "MATCHES_TABLE", value = var.matches_table_name },
+        { name = "REDIS_ENDPOINT", value = var.redis_endpoint },
+        { name = "REDIS_PORT", value = tostring(var.redis_port) },
+        { name = "INGESTION_POLL_INTERVAL", value = tostring(var.ingestion_poll_interval) },
+        { name = "INGESTION_PRE_KICKOFF_BUFFER", value = tostring(var.ingestion_pre_kickoff_buffer) },
+        { name = "INGESTION_HEARTBEAT_INTERVAL", value = tostring(var.ingestion_heartbeat_interval) },
+        { name = "CLOUDWATCH_NAMESPACE", value = var.cloudwatch_namespace },
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ingestion.name
+          "awslogs-region"        = var.region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-ingestion"
+  }
+}
+
+resource "aws_ecs_service" "ingestion" {
+  name            = "${var.project_name}-${var.environment}-ingestion"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.ingestion.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = var.private_subnet_ids
+    security_groups  = [var.ecs_security_group_id]
+    assign_public_ip = false
+  }
+
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-ingestion"
   }
 }

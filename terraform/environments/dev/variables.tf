@@ -61,3 +61,9 @@ variable "google_client_id" {
   type        = string
   default     = "525656224688-cbte42k40e6kuk6s2cvq3t2sq2lg8cmt.apps.googleusercontent.com"
 }
+
+variable "alert_email" {
+  description = "Email address for ingestion alarm notifications"
+  type        = string
+  default     = "cuhhleed.dev@gmail.com"
+}

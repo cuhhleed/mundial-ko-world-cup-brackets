@@ -38,3 +38,24 @@ def get_all_matches() -> dict[str, Match]:
         kwargs["ExclusiveStartKey"] = last
 
     return {item["match_id"]: Match(**item) for item in items}
+
+
+def put_match(match: Match) -> None:
+    table = get_table(settings.MATCHES_TABLE)
+    table.put_item(Item=match.model_dump(exclude_none=True))
+
+
+def get_scheduled_matches() -> dict[str, Match]:
+    table = get_table(settings.MATCHES_TABLE)
+    items: list[dict] = []
+    kwargs: dict = {"FilterExpression": Attr("status").eq("scheduled")}
+
+    while True:
+        response = table.scan(**kwargs)
+        items.extend(response.get("Items", []))
+        last = response.get("LastEvaluatedKey")
+        if last is None:
+            break
+        kwargs["ExclusiveStartKey"] = last
+
+    return {item["match_id"]: Match(**item) for item in items}

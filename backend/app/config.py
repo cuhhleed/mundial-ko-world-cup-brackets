@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str = "DUMMYIDEXAMPLE"
     AWS_SECRET_ACCESS_KEY: str = "DUMMYSECRETANDKEYEXAMPLE"
     ESPN_BASE_URL: str = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world"
+    INGESTION_POLL_INTERVAL: int = 60
+    INGESTION_PRE_KICKOFF_BUFFER: int = 300
+    INGESTION_HEARTBEAT_INTERVAL: int = 3600
+    CLOUDWATCH_NAMESPACE: str = "MundialKO"
 
     model_config = {"env_file": ".env"}
 

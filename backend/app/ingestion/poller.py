@@ -1,0 +1,103 @@
+import asyncio
+import contextlib
+from datetime import datetime, timezone
+
+from app.config import settings
+from app.db.cache import set_match_state
+from app.espn.adapter import espn_events_to_matches
+from app.espn.client import fetch_scoreboard
+from app.ingestion.heartbeat import emit_heartbeat
+from app.ingestion.schedule_loader import load_initial_schedule
+from app.logging import get_logger
+from app.models.match import Match
+from app.services.matches import get_scheduled_matches, put_match
+
+logger = get_logger("poller")
+
+
+class IngestionPoller:
+    def __init__(self) -> None:
+        self._match_states: dict[str, str] = {}
+
+    async def run(self, shutdown: asyncio.Event) -> None:
+        logger.info("poller_starting")
+
+        await asyncio.to_thread(load_initial_schedule, "20260628", "20260719")
+
+        while not shutdown.is_set():
+            sleep_duration = await asyncio.to_thread(self._compute_sleep_duration)
+            logger.info("poller_sleeping", seconds=sleep_duration)
+
+            with contextlib.suppress(asyncio.TimeoutError):
+                await asyncio.wait_for(shutdown.wait(), timeout=sleep_duration)
+
+            if shutdown.is_set():
+                break
+
+            await self._poll_cycle()
+
+        logger.info("poller_stopped")
+
+    def _compute_sleep_duration(self) -> float:
+        poll_interval = float(settings.INGESTION_POLL_INTERVAL)
+        heartbeat_interval = float(settings.INGESTION_HEARTBEAT_INTERVAL)
+        buffer = float(settings.INGESTION_PRE_KICKOFF_BUFFER)
+
+        # If any tracked match is live, poll at the fast interval
+        if any(status == "live" for status in self._match_states.values()):
+            return poll_interval
+
+        # Find the nearest future kickoff from DynamoDB scheduled matches
+        scheduled = get_scheduled_matches()
+        if not scheduled:
+            return heartbeat_interval
+
+        now = datetime.now(tz=timezone.utc)
+        nearest_seconds: float | None = None
+
+        for match in scheduled.values():
+            try:
+                kickoff = datetime.fromisoformat(match.kickoff_time.replace("Z", "+00:00"))
+            except (ValueError, AttributeError):
+                continue
+
+            seconds_until = (kickoff - now).total_seconds()
+            if seconds_until > 0:
+                if nearest_seconds is None or seconds_until < nearest_seconds:
+                    nearest_seconds = seconds_until
+
+        if nearest_seconds is None:
+            return heartbeat_interval
+
+        sleep = nearest_seconds - buffer
+        return max(poll_interval, min(sleep, heartbeat_interval))
+
+    async def _poll_cycle(self) -> None:
+        logger.info("poll_cycle_start")
+
+        events = await asyncio.to_thread(fetch_scoreboard)
+        matches = espn_events_to_matches(events)
+
+        for match_id, match in matches.items():
+            string_data = {k: str(v) for k, v in match.model_dump(exclude_none=True).items()}
+            await set_match_state(match_id, string_data)
+
+            previous_status = self._match_states.get(match_id)
+            current_status = match.status
+
+            if previous_status != "completed" and current_status == "completed":
+                await self._handle_completion(match)
+
+            self._match_states[match_id] = current_status
+
+        await asyncio.to_thread(emit_heartbeat)
+        logger.info("poll_cycle_done", match_count=len(matches))
+
+    async def _handle_completion(self, match: Match) -> None:
+        logger.info("match_completed", match_id=match.match_id)
+        await asyncio.to_thread(put_match, match)
+        await self._trigger_scoring(match)
+
+    async def _trigger_scoring(self, match: Match) -> None:
+        # Stub for E4-S2: log only, no bracket re-scoring yet
+        logger.info("scoring_trigger_stub", match_id=match.match_id)

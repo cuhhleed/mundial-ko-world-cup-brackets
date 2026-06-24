@@ -33,3 +33,28 @@ def get_cache() -> aioredis.Redis:
     if _client is None:
         raise RuntimeError("Cache client is not connected. Call connect() first.")
     return _client
+
+
+_MATCH_TTL = 86400  # 24 hours
+
+
+async def set_match_state(match_id: str, match_data: dict) -> None:
+    client = get_cache()
+    key = f"match:{match_id}"
+    await client.hset(key, mapping=match_data)
+    await client.expire(key, _MATCH_TTL)
+
+
+async def get_match_state(match_id: str) -> dict | None:
+    client = get_cache()
+    data = await client.hgetall(f"match:{match_id}")
+    return data if data else None
+
+
+async def set_round_matches(round_name: str, match_ids: list[str]) -> None:
+    client = get_cache()
+    key = f"round:{round_name}:matches"
+    await client.delete(key)
+    if match_ids:
+        await client.rpush(key, *match_ids)
+    await client.expire(key, _MATCH_TTL)
