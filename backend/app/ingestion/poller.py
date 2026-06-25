@@ -1,15 +1,17 @@
 import asyncio
 import contextlib
+import time
 from datetime import datetime, timezone
 
 from app.config import settings
-from app.db.cache import set_match_state
+from app.db.cache import set_match_state, update_leaderboard
 from app.espn.adapter import espn_events_to_matches
 from app.espn.client import fetch_scoreboard
 from app.ingestion.heartbeat import emit_heartbeat
 from app.ingestion.schedule_loader import load_initial_schedule
 from app.logging import get_logger
 from app.models.match import Match
+from app.services.brackets import rescore_all_brackets
 from app.services.matches import get_scheduled_matches, put_match
 
 logger = get_logger("poller")
@@ -125,5 +127,22 @@ class IngestionPoller:
         await self._trigger_scoring(match)
 
     async def _trigger_scoring(self, match: Match) -> None:
-        # Stub for E4-S2: log only, no bracket re-scoring yet
-        logger.info("scoring_trigger_stub", match_id=match.match_id)
+        logger.info("scoring_trigger_start", match_id=match.match_id)
+        start = time.monotonic()
+
+        result = await asyncio.to_thread(rescore_all_brackets)
+
+        for _bracket_id, user_id, total_points in result["updates"]:
+            await update_leaderboard(user_id, total_points)
+
+        elapsed_ms = int((time.monotonic() - start) * 1000)
+        logger.info(
+            "scoring_trigger_done",
+            match_id=match.match_id,
+            scored=result["scored"],
+            failed=result["failed"],
+            elapsed_ms=elapsed_ms,
+        )
+
+        if result["errors"]:
+            logger.error("scoring_trigger_errors", match_id=match.match_id, errors=result["errors"])

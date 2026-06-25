@@ -6,7 +6,7 @@ import botocore.exceptions
 from app.bracket.derivation import validate_bracket
 from app.bracket.merge import MergePredictionsError, merge_predictions, slot_prediction_from_match
 from app.bracket.r32_matchups import load_r32_matchups
-from app.bracket.scoring import score_slot
+from app.bracket.scoring import score_bracket, score_slot
 from app.bracket.topology import ALL_SLOTS, FEEDERS
 from app.config import settings
 from app.db.dynamo import get_table
@@ -108,6 +108,54 @@ def get_bracket(bracket_id: str) -> Bracket | None:
         return None
     item["predictions"] = {k: SlotPrediction(**v) for k, v in item["predictions"].items()}
     return Bracket(**item)
+
+
+def get_all_brackets() -> list[Bracket]:
+    table = get_table(settings.BRACKETS_TABLE)
+    items: list[dict] = []
+    kwargs: dict = {}
+
+    while True:
+        response = table.scan(**kwargs)
+        items.extend(response.get("Items", []))
+        last = response.get("LastEvaluatedKey")
+        if last is None:
+            break
+        kwargs["ExclusiveStartKey"] = last
+
+    brackets = []
+    for item in items:
+        item["predictions"] = {k: SlotPrediction(**v) for k, v in item["predictions"].items()}
+        brackets.append(Bracket(**item))
+    return brackets
+
+
+def rescore_all_brackets() -> dict:
+    brackets = get_all_brackets()
+    completed_matches = get_completed_matches()
+
+    scored_count = 0
+    failed_count = 0
+    errors: list[str] = []
+    updates: list[tuple] = []
+
+    for bracket in brackets:
+        try:
+            _, total_points = score_bracket(bracket.predictions, completed_matches, bracket.locked_slots)
+            get_table(settings.BRACKETS_TABLE).update_item(
+                Key={"bracket_id": bracket.bracket_id},
+                UpdateExpression="SET total_points = :pts",
+                ExpressionAttributeValues={":pts": total_points},
+            )
+            updates.append((bracket.bracket_id, bracket.user_id, total_points))
+            scored_count += 1
+        except Exception as exc:
+            msg = f"{bracket.bracket_id}: {exc}"
+            logger.error("rescore_bracket_failed", bracket_id=bracket.bracket_id, error=str(exc))
+            errors.append(msg)
+            failed_count += 1
+
+    return {"scored": scored_count, "failed": failed_count, "errors": errors, "updates": updates}
 
 
 def build_bracket_response(bracket: Bracket) -> BracketResponse:

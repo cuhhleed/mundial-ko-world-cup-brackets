@@ -36,6 +36,12 @@ def get_cache() -> aioredis.Redis:
 
 
 _MATCH_TTL = 86400  # 24 hours
+_LEADERBOARD_KEY = "leaderboard"
+
+
+async def update_leaderboard(user_id: str, points: int) -> None:
+    client = get_cache()
+    await client.zadd(_LEADERBOARD_KEY, {user_id: points})
 
 
 async def set_match_state(match_id: str, match_data: dict) -> None:

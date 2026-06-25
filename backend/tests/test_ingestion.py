@@ -88,6 +88,15 @@ class TestCacheOperations:
         mock_redis.rpush.assert_called_once_with("round:R32:matches", "R32-1", "R32-2")
         mock_redis.expire.assert_called_once_with("round:R32:matches", 86400)
 
+    def test_update_leaderboard_calls_zadd(self):
+        mock_redis = AsyncMock()
+        import app.db.cache as cache_module
+
+        with patch.object(cache_module, "_client", mock_redis):
+            run_async(cache_module.update_leaderboard("user-1", 42))
+
+        mock_redis.zadd.assert_called_once_with("leaderboard", {"user-1": 42})
+
 
 # ---------------------------------------------------------------------------
 # _compute_sleep_duration
@@ -321,6 +330,144 @@ class TestEmitHeartbeat:
         assert metric["MetricName"] == "IngestionHeartbeat"
         assert metric["Value"] == 1
         assert metric["Dimensions"][0] == {"Name": "Environment", "Value": "test"}
+
+
+# ---------------------------------------------------------------------------
+# rescore_all_brackets
+# ---------------------------------------------------------------------------
+
+
+class TestRescoreAllBrackets:
+    def _make_bracket(self, bracket_id, user_id, predictions=None, locked_slots=None):
+        from app.models.bracket import Bracket, SlotPrediction
+
+        if predictions is None:
+            predictions = {
+                "R32-1": SlotPrediction(teams=["ARG", "BRA"], winner="ARG"),
+            }
+        return Bracket(
+            bracket_id=bracket_id,
+            user_id=user_id,
+            predictions=predictions,
+            locked_slots=locked_slots or [],
+            total_points=0,
+            status="submitted",
+            created_at="2026-06-24T00:00:00+00:00",
+        )
+
+    def test_rescore_updates_dynamo_for_each_bracket(self):
+        from app.models.match import Match
+
+        bracket_a = self._make_bracket("b-1", "user-1")
+        bracket_b = self._make_bracket("b-2", "user-2")
+        completed = {}
+
+        mock_table = MagicMock()
+
+        with (
+            patch("app.services.brackets.get_all_brackets", return_value=[bracket_a, bracket_b]),
+            patch("app.services.brackets.get_completed_matches", return_value=completed),
+            patch("app.services.brackets.get_table", return_value=mock_table),
+        ):
+            from app.services.brackets import rescore_all_brackets
+
+            result = rescore_all_brackets()
+
+        assert result["scored"] == 2
+        assert result["failed"] == 0
+        assert mock_table.update_item.call_count == 2
+
+        call_keys = [c.kwargs["Key"]["bracket_id"] for c in mock_table.update_item.call_args_list]
+        assert "b-1" in call_keys
+        assert "b-2" in call_keys
+
+    def test_rescore_continues_on_bracket_failure(self):
+        bracket_a = self._make_bracket("b-1", "user-1")
+        bracket_b = self._make_bracket("b-2", "user-2")
+        completed = {}
+
+        mock_table = MagicMock()
+        mock_table.update_item.side_effect = [Exception("DynamoDB error"), None]
+
+        with (
+            patch("app.services.brackets.get_all_brackets", return_value=[bracket_a, bracket_b]),
+            patch("app.services.brackets.get_completed_matches", return_value=completed),
+            patch("app.services.brackets.get_table", return_value=mock_table),
+        ):
+            from app.services.brackets import rescore_all_brackets
+
+            result = rescore_all_brackets()
+
+        assert result["failed"] == 1
+        assert result["scored"] == 1
+        assert len(result["errors"]) == 1
+
+
+# ---------------------------------------------------------------------------
+# _trigger_scoring
+# ---------------------------------------------------------------------------
+
+
+class TestTriggerScoring:
+    def test_trigger_scoring_calls_rescore_and_updates_leaderboard(self):
+        from app.ingestion.poller import IngestionPoller
+
+        poller = IngestionPoller()
+        match = make_match(match_id="R32-1", status="completed", home_score=1, away_score=0)
+
+        canned_result = {
+            "scored": 2,
+            "failed": 0,
+            "errors": [],
+            "updates": [("b-1", "user-1", 10), ("b-2", "user-2", 5)],
+        }
+
+        mock_update_leaderboard = AsyncMock()
+
+        with (
+            patch("app.ingestion.poller.rescore_all_brackets", return_value=canned_result),
+            patch("app.ingestion.poller.update_leaderboard", mock_update_leaderboard),
+            patch("asyncio.to_thread", side_effect=_fake_to_thread),
+        ):
+            run_async(poller._trigger_scoring(match))
+
+        assert mock_update_leaderboard.call_count == 2
+        mock_update_leaderboard.assert_any_call("user-1", 10)
+        mock_update_leaderboard.assert_any_call("user-2", 5)
+
+    def test_match_completion_triggers_full_rescore(self):
+        from app.ingestion.poller import IngestionPoller
+
+        poller = IngestionPoller()
+        poller._match_states = {"R32-1": "live"}
+
+        completed_match = make_match(match_id="R32-1", status="completed", home_score=2, away_score=1)
+
+        canned_result = {
+            "scored": 1,
+            "failed": 0,
+            "errors": [],
+            "updates": [("b-1", "user-1", 7)],
+        }
+
+        mock_update_leaderboard = AsyncMock()
+
+        with (
+            patch("app.ingestion.poller.fetch_scoreboard", return_value=[]),
+            patch(
+                "app.ingestion.poller.espn_events_to_matches",
+                return_value={"R32-1": completed_match},
+            ),
+            patch("app.ingestion.poller.set_match_state", new_callable=AsyncMock),
+            patch("app.ingestion.poller.put_match"),
+            patch("app.ingestion.poller.emit_heartbeat"),
+            patch("app.ingestion.poller.rescore_all_brackets", return_value=canned_result),
+            patch("app.ingestion.poller.update_leaderboard", mock_update_leaderboard),
+            patch("asyncio.to_thread", side_effect=_fake_to_thread),
+        ):
+            run_async(poller._poll_cycle())
+
+        mock_update_leaderboard.assert_called_once_with("user-1", 7)
 
 
 # ---------------------------------------------------------------------------
