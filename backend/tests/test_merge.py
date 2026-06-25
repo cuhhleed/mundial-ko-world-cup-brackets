@@ -43,12 +43,18 @@ def full_user_predictions() -> dict[str, SlotPrediction]:
     preds: dict[str, SlotPrediction] = {}
 
     for i in range(1, 17):
-        home, away = f"T{2*i-1:02d}", f"T{2*i:02d}"
+        home, away = f"T{2 * i - 1:02d}", f"T{2 * i:02d}"
         preds[f"R32-{i}"] = sp([home, away], home)
 
     r16_teams = [
-        ("T01", "T03"), ("T05", "T07"), ("T09", "T11"), ("T13", "T15"),
-        ("T17", "T19"), ("T21", "T23"), ("T25", "T27"), ("T29", "T31"),
+        ("T01", "T03"),
+        ("T05", "T07"),
+        ("T09", "T11"),
+        ("T13", "T15"),
+        ("T17", "T19"),
+        ("T21", "T23"),
+        ("T25", "T27"),
+        ("T29", "T31"),
     ]
     for i, (h, a) in enumerate(r16_teams, 1):
         preds[f"R16-{i}"] = sp([h, a], h)
@@ -149,9 +155,14 @@ class TestScoreBearingLockedSlot:
     def test_final_with_pks_includes_pk_fields(self, full_user_predictions):
         completed = {
             "FINAL": make_match(
-                "FINAL", "FINAL", "T01", "T17",
-                home_score=1, away_score=1,
-                pk_home_score=4, pk_away_score=3,
+                "FINAL",
+                "FINAL",
+                "T01",
+                "T17",
+                home_score=1,
+                away_score=1,
+                pk_home_score=4,
+                pk_away_score=3,
                 pk_winner="T01",
             ),
         }
@@ -171,9 +182,14 @@ class TestNonScoreBearingWithPKs:
         """R32 match decided on PKs (scores level at 90') — pk fields must not appear."""
         completed = {
             "R32-5": make_match(
-                "R32-5", "R32", "T09", "T10",
-                home_score=0, away_score=0,
-                pk_home_score=5, pk_away_score=4,
+                "R32-5",
+                "R32",
+                "T09",
+                "T10",
+                home_score=0,
+                away_score=0,
+                pk_home_score=5,
+                pk_away_score=4,
                 pk_winner="T09",
             ),
         }

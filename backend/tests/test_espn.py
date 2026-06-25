@@ -60,7 +60,7 @@ def make_espn_event(
                 "status": {
                     "type": {
                         "state": state,
-                        "name": "STATUS_SCHEDULED" if state == "pre" else "STATUS_IN_PROGRESS",
+                        "name": ("STATUS_SCHEDULED" if state == "pre" else "STATUS_IN_PROGRESS"),
                         "completed": state == "post",
                     }
                 },
@@ -126,9 +126,7 @@ class TestScoreExtraction:
         assert match.away_score is None
 
     def test_completed_match_scores_parsed(self):
-        event = make_espn_event(
-            state="post", home_score="2", away_score="1", home_winner=True
-        )
+        event = make_espn_event(state="post", home_score="2", away_score="1", home_winner=True)
         match = espn_event_to_match(event, "R32-1")
         assert match.home_score == 2
         assert match.away_score == 1
@@ -159,8 +157,14 @@ class TestScoreExtraction:
 class TestHomeAwayAssignment:
     def test_away_competitor_first_in_array(self):
         """Adapter must use homeAway field, not array position."""
-        event = make_espn_event(home_abbr="ESP", away_abbr="FRA", state="post",
-                                home_score="3", away_score="1", home_winner=True)
+        event = make_espn_event(
+            home_abbr="ESP",
+            away_abbr="FRA",
+            state="post",
+            home_score="3",
+            away_score="1",
+            home_winner=True,
+        )
         # Swap the competitors so away is first in the list
         competitors = event["competitions"][0]["competitors"]
         competitors[0], competitors[1] = competitors[1], competitors[0]

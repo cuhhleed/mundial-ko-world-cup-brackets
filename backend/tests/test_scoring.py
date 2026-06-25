@@ -12,6 +12,7 @@ def sp(teams: list[str], winner: str, **kwargs) -> SlotPrediction:
 # Basic correctness
 # ---------------------------------------------------------------------------
 
+
 class TestCorrectWinnerWrongScore:
     def test_sf_correct_winner_wrong_score(self):
         prediction = sp(["BRA", "ARG"], "BRA", scores={"BRA": 1, "ARG": 0})
@@ -111,14 +112,18 @@ class TestNoResult:
 # Parametrized correct-winner across all rounds
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("slot_id, expected_pts", [
-    ("R32-1",  2),
-    ("R16-1",  4),
-    ("QF-1",   8),
-    ("SF-1",  16),
-    ("FINAL", 32),
-    ("TP",    10),
-])
+
+@pytest.mark.parametrize(
+    "slot_id, expected_pts",
+    [
+        ("R32-1", 2),
+        ("R16-1", 4),
+        ("QF-1", 8),
+        ("SF-1", 16),
+        ("FINAL", 32),
+        ("TP", 10),
+    ],
+)
 def test_correct_winner_points_per_round(slot_id: str, expected_pts: int):
     prediction = sp(["BRA", "ARG"], "BRA")
     result = sp(["BRA", "ARG"], "BRA")
@@ -131,6 +136,7 @@ def test_correct_winner_points_per_round(slot_id: str, expected_pts: int):
 # ---------------------------------------------------------------------------
 # PK edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestPKEdgeCases:
     def test_pk_prediction_exists_but_match_was_decisive(self):

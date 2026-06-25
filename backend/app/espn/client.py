@@ -76,11 +76,7 @@ def fetch_live_scores() -> list[dict]:
     return [
         event
         for event in events
-        if event.get("competitions", [{}])[0]
-        .get("status", {})
-        .get("type", {})
-        .get("state")
-        == "in"
+        if event.get("competitions", [{}])[0].get("status", {}).get("type", {}).get("state") == "in"
     ]
 
 

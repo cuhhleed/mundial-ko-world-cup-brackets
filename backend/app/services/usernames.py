@@ -13,7 +13,7 @@ ADJECTIVES = [
     "Pressing",
     "Bicycle",
     "Trivela",
-    "Backheel"
+    "Backheel",
 ]
 
 NOUNS = [
@@ -29,11 +29,9 @@ NOUNS = [
     "Talisman",
     "Regista",
     "Pivot",
-    "Skipper"
+    "Skipper",
 ]
 
 
 def generate_display_name() -> str:
-    return (
-        f"{secrets.choice(ADJECTIVES)}{secrets.choice(NOUNS)}{secrets.randbelow(99) + 1}"
-    )
+    return f"{secrets.choice(ADJECTIVES)}{secrets.choice(NOUNS)}{secrets.randbelow(99) + 1}"

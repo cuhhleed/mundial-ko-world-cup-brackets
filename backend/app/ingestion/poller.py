@@ -52,9 +52,7 @@ class IngestionPoller:
         task = asyncio.ensure_future(task_coro)
         waiter = asyncio.ensure_future(shutdown.wait())
 
-        done, pending = await asyncio.wait(
-            {task, waiter}, return_when=asyncio.FIRST_COMPLETED
-        )
+        done, pending = await asyncio.wait({task, waiter}, return_when=asyncio.FIRST_COMPLETED)
 
         for p in pending:
             p.cancel()
@@ -145,4 +143,8 @@ class IngestionPoller:
         )
 
         if result["errors"]:
-            logger.error("scoring_trigger_errors", match_id=match.match_id, errors=result["errors"])
+            logger.error(
+                "scoring_trigger_errors",
+                match_id=match.match_id,
+                errors=result["errors"],
+            )

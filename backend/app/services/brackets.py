@@ -4,7 +4,11 @@ from uuid import uuid4
 import botocore.exceptions
 
 from app.bracket.derivation import validate_bracket
-from app.bracket.merge import MergePredictionsError, merge_predictions, slot_prediction_from_match
+from app.bracket.merge import (
+    MergePredictionsError,
+    merge_predictions,
+    slot_prediction_from_match,
+)
 from app.bracket.r32_matchups import load_r32_matchups
 from app.bracket.scoring import score_bracket, score_slot
 from app.bracket.topology import ALL_SLOTS, FEEDERS
@@ -58,8 +62,7 @@ def create_bracket(
     created_at = datetime.now(timezone.utc).isoformat()
 
     serialized_predictions = {
-        slot: pred.model_dump(exclude_none=True)
-        for slot, pred in merged_predictions.items()
+        slot: pred.model_dump(exclude_none=True) for slot, pred in merged_predictions.items()
     }
 
     get_table(settings.BRACKETS_TABLE).put_item(
@@ -78,9 +81,7 @@ def create_bracket(
         get_table(settings.USERS_TABLE).update_item(
             Key={"user_id": user_id},
             UpdateExpression="SET bracket_id = :bid",
-            ConditionExpression=(
-                "attribute_not_exists(bracket_id) OR bracket_id = :null"
-            ),
+            ConditionExpression=("attribute_not_exists(bracket_id) OR bracket_id = :null"),
             ExpressionAttributeValues={":bid": bracket_id, ":null": None},
         )
     except botocore.exceptions.ClientError as e:
@@ -141,7 +142,9 @@ def rescore_all_brackets() -> dict:
 
     for bracket in brackets:
         try:
-            _, total_points = score_bracket(bracket.predictions, completed_matches, bracket.locked_slots)
+            _, total_points = score_bracket(
+                bracket.predictions, completed_matches, bracket.locked_slots
+            )
             get_table(settings.BRACKETS_TABLE).update_item(
                 Key={"bracket_id": bracket.bracket_id},
                 UpdateExpression="SET total_points = :pts",
@@ -155,7 +158,12 @@ def rescore_all_brackets() -> dict:
             errors.append(msg)
             failed_count += 1
 
-    return {"scored": scored_count, "failed": failed_count, "errors": errors, "updates": updates}
+    return {
+        "scored": scored_count,
+        "failed": failed_count,
+        "errors": errors,
+        "updates": updates,
+    }
 
 
 def build_bracket_response(bracket: Bracket) -> BracketResponse:

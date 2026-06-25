@@ -31,10 +31,12 @@ dynamodb = boto3.resource(
 )
 table = dynamodb.Table(TABLE_NAME)
 
-ALL_SLOTS = [f"R32-{i}" for i in range(1, 17)] + \
-            [f"R16-{i}" for i in range(1, 9)] + \
-            [f"QF-{i}" for i in range(1, 5)] + \
-            ["SF-1", "SF-2", "FINAL", "TP"]
+ALL_SLOTS = (
+    [f"R32-{i}" for i in range(1, 17)]
+    + [f"R16-{i}" for i in range(1, 9)]
+    + [f"QF-{i}" for i in range(1, 5)]
+    + ["SF-1", "SF-2", "FINAL", "TP"]
+)
 
 FEEDERS = {
     "R16-1": (("R32-1", "winner"), ("R32-2", "winner")),
@@ -121,7 +123,7 @@ def prompt_score(slot_id: str, home: str, away: str) -> dict | None:
     print(f"{'─' * 50}")
 
     while True:
-        raw = input(f"  Score (e.g. 2-1), [s]kip, or [q]uit: ").strip().lower()
+        raw = input("  Score (e.g. 2-1), [s]kip, or [q]uit: ").strip().lower()
 
         if raw in ("q", "quit"):
             return None
@@ -161,10 +163,10 @@ def prompt_score(slot_id: str, home: str, away: str) -> dict | None:
 
 def prompt_pk(home: str, away: str) -> dict | None:
     """Prompt for penalty shootout result after a draw."""
-    print(f"  Draw! Enter penalty result.")
+    print("  Draw! Enter penalty result.")
 
     while True:
-        raw = input(f"  PK score (e.g. 5-4), or [q]uit: ").strip().lower()
+        raw = input("  PK score (e.g. 5-4), or [q]uit: ").strip().lower()
 
         if raw in ("q", "quit"):
             return None
@@ -197,8 +199,15 @@ def prompt_pk(home: str, away: str) -> dict | None:
         }
 
 
-def write_result(slot_id: str, rnd: str, match_number: int,
-                 home: str, away: str, result: dict, existing: dict | None):
+def write_result(
+    slot_id: str,
+    rnd: str,
+    match_number: int,
+    home: str,
+    away: str,
+    result: dict,
+    existing: dict | None,
+):
     """Write the completed match to DynamoDB."""
     item = {
         "match_id": slot_id,
@@ -209,7 +218,11 @@ def write_result(slot_id: str, rnd: str, match_number: int,
         "home_score": result["home_score"],
         "away_score": result["away_score"],
         "status": "completed",
-        "kickoff_time": existing.get("kickoff_time", datetime.now(timezone.utc).isoformat()) if existing else datetime.now(timezone.utc).isoformat(),
+        "kickoff_time": (
+            existing.get("kickoff_time", datetime.now(timezone.utc).isoformat())
+            if existing
+            else datetime.now(timezone.utc).isoformat()
+        ),
     }
 
     if "pk_home_score" in result:
@@ -219,7 +232,9 @@ def write_result(slot_id: str, rnd: str, match_number: int,
 
     table.put_item(Item=item)
 
-    winner = result.get("pk_winner") or (home if result["home_score"] > result["away_score"] else away)
+    winner = result.get("pk_winner") or (
+        home if result["home_score"] > result["away_score"] else away
+    )
     score_line = format_score(item)
     print(f"  ✓ {slot_id}: {home} {score_line} {away}  →  {winner}")
 
@@ -261,7 +276,9 @@ def run():
             results[slot_id] = existing
             winner = get_winner(existing)
             score_line = format_score(existing)
-            print(f"  [done] {slot_id}: {existing['home_team']} {score_line} {existing['away_team']}  →  {winner}")
+            print(
+                f"  [done] {slot_id}: {existing['home_team']} {score_line} {existing['away_team']}  →  {winner}"
+            )
             completed_count += 1
             continue
 
@@ -291,7 +308,9 @@ def run():
         results[slot_id] = item
         simulated_count += 1
 
-    print(f"\nTournament complete! Simulated {simulated_count} matches ({completed_count} were already done).")
+    print(
+        f"\nTournament complete! Simulated {simulated_count} matches ({completed_count} were already done)."
+    )
 
 
 if __name__ == "__main__":

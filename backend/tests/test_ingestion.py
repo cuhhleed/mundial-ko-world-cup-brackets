@@ -206,7 +206,10 @@ class TestPollCycleTransitionDetection:
         poller = IngestionPoller()
         poller._match_states = {"R32-1": "live"}
 
-        completed_match = make_match(match_id="R32-1", status="completed", home_score=2, away_score=1)
+        completed_match = make_match(
+            match_id="R32-1", status="completed", home_score=2, away_score=1
+        )
+        canned_result = {"scored": 0, "failed": 0, "errors": [], "updates": []}
 
         with (
             patch("app.ingestion.poller.fetch_scoreboard", return_value=[]),
@@ -217,6 +220,8 @@ class TestPollCycleTransitionDetection:
             patch("app.ingestion.poller.set_match_state", new_callable=AsyncMock),
             patch("app.ingestion.poller.put_match") as mock_put,
             patch("app.ingestion.poller.emit_heartbeat"),
+            patch("app.ingestion.poller.rescore_all_brackets", return_value=canned_result),
+            patch("app.ingestion.poller.update_leaderboard", new_callable=AsyncMock),
             patch("asyncio.to_thread", side_effect=_fake_to_thread),
         ):
             run_async(poller._poll_cycle())
@@ -229,7 +234,9 @@ class TestPollCycleTransitionDetection:
         poller = IngestionPoller()
         poller._match_states = {"R32-1": "completed"}
 
-        completed_match = make_match(match_id="R32-1", status="completed", home_score=2, away_score=1)
+        completed_match = make_match(
+            match_id="R32-1", status="completed", home_score=2, away_score=1
+        )
 
         with (
             patch("app.ingestion.poller.fetch_scoreboard", return_value=[]),
@@ -252,7 +259,10 @@ class TestPollCycleTransitionDetection:
         poller = IngestionPoller()
         poller._match_states = {}
 
-        completed_match = make_match(match_id="R32-1", status="completed", home_score=1, away_score=0)
+        completed_match = make_match(
+            match_id="R32-1", status="completed", home_score=1, away_score=0
+        )
+        canned_result = {"scored": 0, "failed": 0, "errors": [], "updates": []}
 
         with (
             patch("app.ingestion.poller.fetch_scoreboard", return_value=[]),
@@ -263,6 +273,8 @@ class TestPollCycleTransitionDetection:
             patch("app.ingestion.poller.set_match_state", new_callable=AsyncMock),
             patch("app.ingestion.poller.put_match") as mock_put,
             patch("app.ingestion.poller.emit_heartbeat"),
+            patch("app.ingestion.poller.rescore_all_brackets", return_value=canned_result),
+            patch("app.ingestion.poller.update_leaderboard", new_callable=AsyncMock),
             patch("asyncio.to_thread", side_effect=_fake_to_thread),
         ):
             run_async(poller._poll_cycle())
@@ -356,7 +368,6 @@ class TestRescoreAllBrackets:
         )
 
     def test_rescore_updates_dynamo_for_each_bracket(self):
-        from app.models.match import Match
 
         bracket_a = self._make_bracket("b-1", "user-1")
         bracket_b = self._make_bracket("b-2", "user-2")
@@ -365,7 +376,10 @@ class TestRescoreAllBrackets:
         mock_table = MagicMock()
 
         with (
-            patch("app.services.brackets.get_all_brackets", return_value=[bracket_a, bracket_b]),
+            patch(
+                "app.services.brackets.get_all_brackets",
+                return_value=[bracket_a, bracket_b],
+            ),
             patch("app.services.brackets.get_completed_matches", return_value=completed),
             patch("app.services.brackets.get_table", return_value=mock_table),
         ):
@@ -390,7 +404,10 @@ class TestRescoreAllBrackets:
         mock_table.update_item.side_effect = [Exception("DynamoDB error"), None]
 
         with (
-            patch("app.services.brackets.get_all_brackets", return_value=[bracket_a, bracket_b]),
+            patch(
+                "app.services.brackets.get_all_brackets",
+                return_value=[bracket_a, bracket_b],
+            ),
             patch("app.services.brackets.get_completed_matches", return_value=completed),
             patch("app.services.brackets.get_table", return_value=mock_table),
         ):
@@ -441,7 +458,9 @@ class TestTriggerScoring:
         poller = IngestionPoller()
         poller._match_states = {"R32-1": "live"}
 
-        completed_match = make_match(match_id="R32-1", status="completed", home_score=2, away_score=1)
+        completed_match = make_match(
+            match_id="R32-1", status="completed", home_score=2, away_score=1
+        )
 
         canned_result = {
             "scored": 1,

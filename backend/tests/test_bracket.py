@@ -17,7 +17,7 @@ def sp(teams: list[str], winner: str, **kwargs) -> SlotPrediction:
 
 @pytest.fixture
 def r32_seed() -> dict[str, tuple[str, str]]:
-    return {f"R32-{i}": (f"T{2*i-1:02d}", f"T{2*i:02d}") for i in range(1, 17)}
+    return {f"R32-{i}": (f"T{2 * i - 1:02d}", f"T{2 * i:02d}") for i in range(1, 17)}
 
 
 @pytest.fixture
@@ -36,14 +36,20 @@ def valid_predictions() -> dict[str, SlotPrediction]:
 
     # R32 — winner-only
     for i in range(1, 17):
-        home, away = f"T{2*i-1:02d}", f"T{2*i:02d}"
+        home, away = f"T{2 * i - 1:02d}", f"T{2 * i:02d}"
         preds[f"R32-{i}"] = sp([home, away], home)
 
     # R16 — winner-only
     # R16-k feeds from R32-(2k-1) and R32-(2k)
     r16_teams = [
-        ("T01", "T03"), ("T05", "T07"), ("T09", "T11"), ("T13", "T15"),
-        ("T17", "T19"), ("T21", "T23"), ("T25", "T27"), ("T29", "T31"),
+        ("T01", "T03"),
+        ("T05", "T07"),
+        ("T09", "T11"),
+        ("T13", "T15"),
+        ("T17", "T19"),
+        ("T21", "T23"),
+        ("T25", "T27"),
+        ("T29", "T31"),
     ]
     for i, (h, a) in enumerate(r16_teams, 1):
         preds[f"R16-{i}"] = sp([h, a], h)

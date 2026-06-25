@@ -35,9 +35,7 @@ class TestGetMe:
         resp = client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 404
 
-    def test_signup_creates_dynamo_record_with_display_name(
-        self, client: TestClient, mock_dynamo
-    ):
+    def test_signup_creates_dynamo_record_with_display_name(self, client: TestClient, mock_dynamo):
         create_user("abc-123", "player@example.com")
         item = get_table(settings.USERS_TABLE).get_item(Key={"user_id": "abc-123"}).get("Item")
         assert item is not None
@@ -58,9 +56,7 @@ class TestGetMe:
 
     def test_expired_token_returns_401(self, client: TestClient):
         expired_token = make_token(exp=int(time.time()) - 10)
-        resp = client.get(
-            "/api/users/me", headers={"Authorization": f"Bearer {expired_token}"}
-        )
+        resp = client.get("/api/users/me", headers={"Authorization": f"Bearer {expired_token}"})
         assert resp.status_code == 401
 
     def test_wrong_audience_returns_401(self, client: TestClient):
@@ -73,9 +69,7 @@ class TestGetMe:
         resp = client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 401
 
-    def test_signature_by_different_key_returns_401(
-        self, mock_dynamo, override_verifier
-    ):
+    def test_signature_by_different_key_returns_401(self, mock_dynamo, override_verifier):
         """Token signed by a key unknown to the fake JWK client is rejected."""
         other_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         token = pyjwt.encode(
@@ -117,9 +111,7 @@ class TestGetMe:
             create_user("alt-user", "alt@example.com")
             alt_token = make_token(sub="alt-user", iss="accounts.google.com")
             alt_client = TestClient(app)
-            resp = alt_client.get(
-                "/api/users/me", headers={"Authorization": f"Bearer {alt_token}"}
-            )
+            resp = alt_client.get("/api/users/me", headers={"Authorization": f"Bearer {alt_token}"})
             assert resp.status_code == 200
         finally:
             app.dependency_overrides.clear()
@@ -128,9 +120,7 @@ class TestGetMe:
         resp = client.get("/health")
         assert resp.status_code == 200
 
-    def test_get_me_returns_same_user_on_repeated_calls(
-        self, client: TestClient, mock_dynamo
-    ):
+    def test_get_me_returns_same_user_on_repeated_calls(self, client: TestClient, mock_dynamo):
         create_user("idem-user", "idem@example.com")
         token = make_token(sub="idem-user", email="idem@example.com")
         headers = {"Authorization": f"Bearer {token}"}

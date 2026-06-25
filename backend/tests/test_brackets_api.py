@@ -50,12 +50,13 @@ def _seed_user(
     email: str = "test@example.com",
 ) -> None:
     from app.services.users import create as create_user
+
     create_user(sub, email)
 
 
 @pytest.fixture
 def r32_seed() -> dict[str, tuple[str, str]]:
-    return {f"R32-{i}": (f"T{2*i-1:02d}", f"T{2*i:02d}") for i in range(1, 17)}
+    return {f"R32-{i}": (f"T{2 * i - 1:02d}", f"T{2 * i:02d}") for i in range(1, 17)}
 
 
 @pytest.fixture(autouse=True)
@@ -82,13 +83,19 @@ def valid_predictions() -> dict[str, dict]:
 
     # R32 — winner-only
     for i in range(1, 17):
-        home, away = f"T{2*i-1:02d}", f"T{2*i:02d}"
+        home, away = f"T{2 * i - 1:02d}", f"T{2 * i:02d}"
         preds[f"R32-{i}"] = sp([home, away], home)
 
     # R16 — winner-only
     r16_teams = [
-        ("T01", "T03"), ("T05", "T07"), ("T09", "T11"), ("T13", "T15"),
-        ("T17", "T19"), ("T21", "T23"), ("T25", "T27"), ("T29", "T31"),
+        ("T01", "T03"),
+        ("T05", "T07"),
+        ("T09", "T11"),
+        ("T13", "T15"),
+        ("T17", "T19"),
+        ("T21", "T23"),
+        ("T25", "T27"),
+        ("T29", "T31"),
     ]
     for i, (h, a) in enumerate(r16_teams, 1):
         preds[f"R16-{i}"] = sp([h, a], h)
@@ -219,9 +226,7 @@ class TestLateBracket:
         assert set(data["locked_slots"]) == {"R32-1", "R32-2"}
         assert len(data["predictions"]) == 32
 
-    def test_prediction_for_locked_slot_returns_400(
-        self, client: TestClient, valid_predictions
-    ):
+    def test_prediction_for_locked_slot_returns_400(self, client: TestClient, valid_predictions):
         _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
 
         _seed_user()
@@ -241,9 +246,7 @@ class TestLateBracket:
         _seed_user()
         token = make_token()
         # Remove R32-1 (locked) AND R32-3 (open, missing)
-        partial = {
-            k: v for k, v in valid_predictions.items() if k not in {"R32-1", "R32-3"}
-        }
+        partial = {k: v for k, v in valid_predictions.items() if k not in {"R32-1", "R32-3"}}
         resp = client.post(
             "/api/brackets",
             json={"predictions": partial},
@@ -331,9 +334,7 @@ class TestGetMyBracket:
 
 
 class TestScoringIntegration:
-    def test_completed_r32_match_scores_correct_winner(
-        self, client: TestClient, valid_predictions
-    ):
+    def test_completed_r32_match_scores_correct_winner(self, client: TestClient, valid_predictions):
         # Seed a completed R32-1 match where T01 wins 2-0 (T01 is the predicted winner)
         _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
 

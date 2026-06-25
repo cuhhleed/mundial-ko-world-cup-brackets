@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import botocore.exceptions
 
 from app.config import settings
-from app.db.dynamo import get_table
+from app.db.dynamo import get_dynamodb, get_table
 from app.logging import get_logger
 from app.models.user import UserRecord
 from app.services.usernames import generate_display_name
@@ -77,3 +77,31 @@ def update_display_name(user_id: str, display_name: str) -> UserRecord | None:
             return None
         raise
     return UserRecord(**response["Attributes"])
+
+
+def batch_get_display_names(user_ids: list[str]) -> dict[str, str]:
+    if not user_ids:
+        return {}
+
+    result: dict[str, str] = {}
+    dynamo = get_dynamodb()
+
+    # Process in chunks of 100 (DynamoDB BatchGetItem limit)
+    chunk_size = 100
+    for i in range(0, len(user_ids), chunk_size):
+        chunk = user_ids[i : i + chunk_size]
+        unprocessed: dict = {
+            settings.USERS_TABLE: {
+                "Keys": [{"user_id": uid} for uid in chunk],
+                "ProjectionExpression": "user_id, display_name",
+            }
+        }
+
+        while unprocessed:
+            response = dynamo.batch_get_item(RequestItems=unprocessed)
+            items = response.get("Responses", {}).get(settings.USERS_TABLE, [])
+            for item in items:
+                result[item["user_id"]] = item["display_name"]
+            unprocessed = response.get("UnprocessedKeys", {})
+
+    return result

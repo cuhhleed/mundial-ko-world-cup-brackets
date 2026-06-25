@@ -7,7 +7,7 @@ from botocore.exceptions import ClientError
 PROJECT_NAME = os.getenv("PROJECT_NAME", "mundial-ko")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
 
-fast_config = Config(connect_timeout=5, read_timeout=5, retries={'max_attempts': 1})
+fast_config = Config(connect_timeout=5, read_timeout=5, retries={"max_attempts": 1})
 
 dynamodb = boto3.client(
     "dynamodb",
@@ -15,7 +15,7 @@ dynamodb = boto3.client(
     region_name="localhost",
     aws_access_key_id="DUMMYIDEXAMPLE",
     aws_secret_access_key="DUMMYSECRETANDKEYEXAMPLE",
-    config=fast_config
+    config=fast_config,
 )
 
 TABLES_SCHEMA = [
@@ -94,15 +94,15 @@ def init_tables():
 
 
 R32_TEAMS: dict[str, tuple[str, str]] = {
-    "R32-1":  ("A1", "B2"),
-    "R32-2":  ("C1", "D2"),
-    "R32-3":  ("E1", "F2"),
-    "R32-4":  ("G1", "H2"),
-    "R32-5":  ("B1", "A2"),
-    "R32-6":  ("D1", "C2"),
-    "R32-7":  ("F1", "E2"),
-    "R32-8":  ("H1", "G2"),
-    "R32-9":  ("I1", "J2"),
+    "R32-1": ("A1", "B2"),
+    "R32-2": ("C1", "D2"),
+    "R32-3": ("E1", "F2"),
+    "R32-4": ("G1", "H2"),
+    "R32-5": ("B1", "A2"),
+    "R32-6": ("D1", "C2"),
+    "R32-7": ("F1", "E2"),
+    "R32-8": ("H1", "G2"),
+    "R32-9": ("I1", "J2"),
     "R32-10": ("K1", "L2"),
     "R32-11": ("M1", "N2"),
     "R32-12": ("O1", "P2"),
@@ -159,15 +159,17 @@ def seed_matches():
     for slot_id, (home, away) in R32_TEAMS.items():
         if slot_id in completed_ids:
             continue
-        table.put_item(Item={
-            "match_id": slot_id,
-            "round": "R32",
-            "match_number": int(slot_id.split("-")[1]),
-            "home_team": home,
-            "away_team": away,
-            "status": "scheduled",
-            "kickoff_time": "2026-06-29T16:00:00Z",
-        })
+        table.put_item(
+            Item={
+                "match_id": slot_id,
+                "round": "R32",
+                "match_number": int(slot_id.split("-")[1]),
+                "home_team": home,
+                "away_team": away,
+                "status": "scheduled",
+                "kickoff_time": "2026-06-29T16:00:00Z",
+            }
+        )
         print(f"Seeded scheduled match: {slot_id}", flush=True)
 
     print("Match seeding complete.\n", flush=True)

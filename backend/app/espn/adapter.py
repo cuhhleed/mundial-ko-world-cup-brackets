@@ -197,10 +197,7 @@ def get_completed_results() -> dict[str, Match]:
     completed = [
         event
         for event in events
-        if event.get("competitions", [{}])[0]
-        .get("status", {})
-        .get("type", {})
-        .get("state")
+        if event.get("competitions", [{}])[0].get("status", {}).get("type", {}).get("state")
         == "post"
     ]
     return espn_events_to_matches(completed)

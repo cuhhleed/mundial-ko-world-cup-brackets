@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "local"
     AWS_REGION: str = "us-east-1"
     DYNAMODB_ENDPOINT_URL: str | None = None
+    TEST_DYNAMODB_ENDPOINT_URL: str = "http://localhost:8001"
     USERS_TABLE: str = "mundial-ko-local-users"
     BRACKETS_TABLE: str = "mundial-ko-local-brackets"
     MATCHES_TABLE: str = "mundial-ko-local-matches"

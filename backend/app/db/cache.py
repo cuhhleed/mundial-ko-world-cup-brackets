@@ -44,6 +44,26 @@ async def update_leaderboard(user_id: str, points: int) -> None:
     await client.zadd(_LEADERBOARD_KEY, {user_id: points})
 
 
+async def get_leaderboard_top(limit: int) -> list[tuple[str, float]]:
+    client = get_cache()
+    return await client.zrevrange(_LEADERBOARD_KEY, 0, limit - 1, withscores=True)
+
+
+async def get_leaderboard_rank(user_id: str) -> int | None:
+    client = get_cache()
+    return await client.zrevrank(_LEADERBOARD_KEY, user_id)
+
+
+async def get_leaderboard_score(user_id: str) -> float | None:
+    client = get_cache()
+    return await client.zscore(_LEADERBOARD_KEY, user_id)
+
+
+async def get_leaderboard_count() -> int:
+    client = get_cache()
+    return await client.zcard(_LEADERBOARD_KEY)
+
+
 async def set_match_state(match_id: str, match_data: dict) -> None:
     client = get_cache()
     key = f"match:{match_id}"
