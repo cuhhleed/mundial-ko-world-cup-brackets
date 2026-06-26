@@ -4,13 +4,25 @@ from uuid import uuid4
 import botocore.exceptions
 
 from app.bracket.derivation import validate_bracket
-from app.bracket.merge import MergePredictionsError, merge_predictions, slot_prediction_from_match
+from app.bracket.merge import (
+    MergePredictionsError,
+    merge_predictions,
+    slot_prediction_from_match,
+)
 from app.bracket.r32_matchups import load_r32_matchups
+from app.bracket.scoring import score_bracket, score_slot
 from app.bracket.topology import ALL_SLOTS, FEEDERS
 from app.config import settings
 from app.db.dynamo import get_table
 from app.logging import get_logger
-from app.models.bracket import Bracket, BracketResponse, BracketTemplate, SlotDetail, SlotPrediction, SlotTemplate
+from app.models.bracket import (
+    Bracket,
+    BracketResponse,
+    BracketTemplate,
+    SlotDetail,
+    SlotPrediction,
+    SlotTemplate,
+)
 from app.services.matches import get_all_matches, get_completed_matches
 
 logger = get_logger("brackets")
@@ -35,7 +47,9 @@ def create_bracket(
 
     if completed_matches:
         try:
-            merged_predictions, locked_slots = merge_predictions(predictions, completed_matches)
+            merged_predictions, locked_slots = merge_predictions(
+                predictions, completed_matches
+            )
         except MergePredictionsError as e:
             raise BracketValidationError(e.errors)
     else:
@@ -94,27 +108,95 @@ def create_bracket(
 
 
 def get_bracket(bracket_id: str) -> Bracket | None:
-    response = get_table(settings.BRACKETS_TABLE).get_item(Key={"bracket_id": bracket_id})
+    response = get_table(settings.BRACKETS_TABLE).get_item(
+        Key={"bracket_id": bracket_id}
+    )
     item = response.get("Item")
     if item is None:
         return None
-    item["predictions"] = {k: SlotPrediction(**v) for k, v in item["predictions"].items()}
+    item["predictions"] = {
+        k: SlotPrediction(**v) for k, v in item["predictions"].items()
+    }
     return Bracket(**item)
+
+
+def get_all_brackets() -> list[Bracket]:
+    table = get_table(settings.BRACKETS_TABLE)
+    items: list[dict] = []
+    kwargs: dict = {}
+
+    while True:
+        response = table.scan(**kwargs)
+        items.extend(response.get("Items", []))
+        last = response.get("LastEvaluatedKey")
+        if last is None:
+            break
+        kwargs["ExclusiveStartKey"] = last
+
+    brackets = []
+    for item in items:
+        item["predictions"] = {
+            k: SlotPrediction(**v) for k, v in item["predictions"].items()
+        }
+        brackets.append(Bracket(**item))
+    return brackets
+
+
+def rescore_all_brackets() -> dict:
+    brackets = get_all_brackets()
+    completed_matches = get_completed_matches()
+
+    scored_count = 0
+    failed_count = 0
+    errors: list[str] = []
+    updates: list[tuple] = []
+
+    for bracket in brackets:
+        try:
+            _, total_points = score_bracket(
+                bracket.predictions, completed_matches, bracket.locked_slots
+            )
+            get_table(settings.BRACKETS_TABLE).update_item(
+                Key={"bracket_id": bracket.bracket_id},
+                UpdateExpression="SET total_points = :pts",
+                ExpressionAttributeValues={":pts": total_points},
+            )
+            updates.append((bracket.bracket_id, bracket.user_id, total_points))
+            scored_count += 1
+        except Exception as exc:
+            msg = f"{bracket.bracket_id}: {exc}"
+            logger.error(
+                "rescore_bracket_failed", bracket_id=bracket.bracket_id, error=str(exc)
+            )
+            errors.append(msg)
+            failed_count += 1
+
+    return {
+        "scored": scored_count,
+        "failed": failed_count,
+        "errors": errors,
+        "updates": updates,
+    }
 
 
 def build_bracket_response(bracket: Bracket) -> BracketResponse:
     completed_matches = get_completed_matches()
     slots: dict[str, SlotDetail] = {}
+    total_points = 0
     for slot_id, prediction in bracket.predictions.items():
         match = completed_matches.get(slot_id)
         result = slot_prediction_from_match(slot_id, match) if match else None
-        slots[slot_id] = SlotDetail(prediction=prediction, result=result, points=None)
+        slot_score = score_slot(slot_id, prediction, result, bracket.locked_slots)
+        points = slot_score.total if slot_score.scored else None
+        if slot_score.scored:
+            total_points += slot_score.total
+        slots[slot_id] = SlotDetail(prediction=prediction, result=result, points=points)
     return BracketResponse(
         bracket_id=bracket.bracket_id,
         user_id=bracket.user_id,
         slots=slots,
         locked_slots=bracket.locked_slots,
-        total_points=bracket.total_points,
+        total_points=total_points,
         status=bracket.status,
         created_at=bracket.created_at,
     )

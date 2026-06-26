@@ -14,3 +14,11 @@ class Match(BaseModel):
     pk_winner: str | None = None
     status: str
     kickoff_time: str
+
+
+# Match is used directly as the response model for individual match endpoints.
+MatchResponse = Match
+
+
+class MatchesByRoundResponse(BaseModel):
+    rounds: dict[str, list[Match]]

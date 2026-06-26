@@ -36,6 +36,8 @@ function toSlotCardData(
       scores,
       pkScores,
       locked: true,
+      status: state.status,
+      kickoffTime: state.kickoffTime,
     }
   }
   return {
@@ -45,6 +47,8 @@ function toSlotCardData(
     scores: state.scores,
     pkScores: state.pkScores,
     locked: state.locked,
+    status: state.status,
+    kickoffTime: state.kickoffTime,
   }
 }
 

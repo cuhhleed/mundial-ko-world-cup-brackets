@@ -88,6 +88,20 @@ def clear_seen_cache():
     reset_seen_cache()
 
 
+@pytest.fixture(autouse=True)
+def _redirect_dynamo_endpoint(monkeypatch):
+    """Point DynamoDB at the host-accessible test endpoint instead of the
+    Docker-internal ``dynamodb-local:8000`` that ``.env`` provides."""
+    import app.db.dynamo as _dynamo_module
+
+    monkeypatch.setattr(
+        settings, "DYNAMODB_ENDPOINT_URL", settings.TEST_DYNAMODB_ENDPOINT_URL
+    )
+    _dynamo_module._resource = None
+    yield
+    _dynamo_module._resource = None
+
+
 @pytest.fixture()
 def mock_dynamo(monkeypatch):
     """Spin up a moto DynamoDB mock and create the Users, Brackets, and Matches tables."""
@@ -124,11 +138,13 @@ def mock_dynamo(monkeypatch):
                 {"AttributeName": "bracket_id", "AttributeType": "S"},
                 {"AttributeName": "user_id", "AttributeType": "S"},
             ],
-            GlobalSecondaryIndexes=[{
-                "IndexName": "user_id-index",
-                "KeySchema": [{"AttributeName": "user_id", "KeyType": "HASH"}],
-                "Projection": {"ProjectionType": "ALL"},
-            }],
+            GlobalSecondaryIndexes=[
+                {
+                    "IndexName": "user_id-index",
+                    "KeySchema": [{"AttributeName": "user_id", "KeyType": "HASH"}],
+                    "Projection": {"ProjectionType": "ALL"},
+                }
+            ],
             BillingMode="PAY_PER_REQUEST",
         )
 
@@ -139,11 +155,13 @@ def mock_dynamo(monkeypatch):
                 {"AttributeName": "match_id", "AttributeType": "S"},
                 {"AttributeName": "round", "AttributeType": "S"},
             ],
-            GlobalSecondaryIndexes=[{
-                "IndexName": "round-index",
-                "KeySchema": [{"AttributeName": "round", "KeyType": "HASH"}],
-                "Projection": {"ProjectionType": "ALL"},
-            }],
+            GlobalSecondaryIndexes=[
+                {
+                    "IndexName": "round-index",
+                    "KeySchema": [{"AttributeName": "round", "KeyType": "HASH"}],
+                    "Projection": {"ProjectionType": "ALL"},
+                }
+            ],
             BillingMode="PAY_PER_REQUEST",
         )
 
@@ -151,6 +169,19 @@ def mock_dynamo(monkeypatch):
 
     # Restore the dynamo resource so subsequent tests start clean.
     _dynamo_module._resource = None
+
+
+async def _noop_coro(*args, **kwargs):
+    pass
+
+
+@pytest.fixture()
+def mock_cache(monkeypatch):
+    """Prevent the lifespan from trying to ping Valkey during tests."""
+    import app.db.cache as _cache_module
+
+    monkeypatch.setattr(_cache_module, "connect", _noop_coro)
+    monkeypatch.setattr(_cache_module, "disconnect", _noop_coro)
 
 
 @pytest.fixture()
@@ -167,6 +198,6 @@ def override_verifier():
 
 
 @pytest.fixture()
-def client(mock_dynamo, override_verifier):
-    """TestClient with moto DynamoDB and the fake verifier wired in."""
+def client(mock_dynamo, mock_cache, override_verifier):
+    """TestClient with moto DynamoDB, mocked cache, and the fake verifier wired in."""
     return TestClient(app)

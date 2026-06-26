@@ -39,13 +39,17 @@ class TestGetMe:
         self, client: TestClient, mock_dynamo
     ):
         create_user("abc-123", "player@example.com")
-        item = get_table(settings.USERS_TABLE).get_item(Key={"user_id": "abc-123"}).get("Item")
+        item = (
+            get_table(settings.USERS_TABLE)
+            .get_item(Key={"user_id": "abc-123"})
+            .get("Item")
+        )
         assert item is not None
         assert item["user_id"] == "abc-123"
         assert item["email"] == "player@example.com"
-        assert DISPLAY_NAME_RE.match(item["display_name"]), (
-            f"display_name {item['display_name']!r} did not match expected pattern"
-        )
+        assert DISPLAY_NAME_RE.match(
+            item["display_name"]
+        ), f"display_name {item['display_name']!r} did not match expected pattern"
 
     def test_missing_authorization_returns_401(self, client: TestClient):
         resp = client.get("/api/users/me")
@@ -93,7 +97,9 @@ class TestGetMe:
         )
         # Use the module-level app (override_verifier fixture already patched it).
         bad_client = TestClient(app)
-        resp = bad_client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
+        resp = bad_client.get(
+            "/api/users/me", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 401
 
     def test_unverified_email_returns_401(self, client: TestClient):

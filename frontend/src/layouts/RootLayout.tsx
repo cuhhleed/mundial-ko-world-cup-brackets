@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, Outlet } from "react-router";
 import { useAuth } from "@/auth/AuthContext";
+import { TeamFlag } from "@/components/TeamFlag";
 
 const DISPLAY_NAME_RE = /^[A-Za-z0-9 ]{3,30}$/;
 
@@ -136,8 +137,13 @@ export function RootLayout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link to="/" className="text-2xl font-bold text-blue-600">
-                Mundial KO
+              <Link
+                to="/"
+                className="text-2xl font-bold text-blue-600 flex gap-1"
+              >
+                <TeamFlag code={"TBD"} className="w-9 h-9" />
+                <span>Mundial</span>
+                <span className="text-red-600">KO</span>
               </Link>
             </div>
 

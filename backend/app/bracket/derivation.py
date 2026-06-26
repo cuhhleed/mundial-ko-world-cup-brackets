@@ -1,5 +1,5 @@
-from app.models.bracket import SlotPrediction
 from app.bracket.topology import ALL_SLOTS, FEEDERS, SCORE_BEARING_SLOTS
+from app.models.bracket import SlotPrediction
 
 
 def predicted_loser(slot: str, predictions: dict[str, SlotPrediction]) -> str | None:
@@ -117,7 +117,9 @@ def _validate_score_bearing(slot: str, pred: SlotPrediction, errors: list[str]) 
             if pred.pk_winner not in pred.teams:
                 errors.append(f"{slot}: pk_winner {pred.pk_winner!r} not in teams")
             if pred.pk_winner != pred.winner:
-                errors.append(f"{slot}: pk_winner must equal winner when scores are level")
+                errors.append(
+                    f"{slot}: pk_winner must equal winner when scores are level"
+                )
             if pred.pk_scores is None:
                 errors.append(f"{slot}: pk_winner requires pk_scores")
             else:
@@ -129,7 +131,13 @@ def _validate_score_bearing(slot: str, pred: SlotPrediction, errors: list[str]) 
                 pk_opp_entry = next(
                     (v for k, v in pred.pk_scores.items() if k != pred.pk_winner), None
                 )
-                if pk_w is not None and pk_opp_entry is not None and pk_w <= pk_opp_entry:
-                    errors.append(f"{slot}: pk_winner must have strictly higher pk_score")
+                if (
+                    pk_w is not None
+                    and pk_opp_entry is not None
+                    and pk_w <= pk_opp_entry
+                ):
+                    errors.append(
+                        f"{slot}: pk_winner must have strictly higher pk_score"
+                    )
     else:
         errors.append(f"{slot}: winner {pred.winner!r} has lower score than opponent")

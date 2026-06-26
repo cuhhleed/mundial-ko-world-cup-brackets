@@ -2,13 +2,13 @@ import copy
 
 import pytest
 
-from app.models.bracket import SlotPrediction
 from app.bracket.derivation import (
-    derive_matchup,
     derive_all_matchups,
+    derive_matchup,
     predicted_loser,
     validate_bracket,
 )
+from app.models.bracket import SlotPrediction
 
 
 def sp(teams: list[str], winner: str, **kwargs) -> SlotPrediction:
@@ -17,7 +17,7 @@ def sp(teams: list[str], winner: str, **kwargs) -> SlotPrediction:
 
 @pytest.fixture
 def r32_seed() -> dict[str, tuple[str, str]]:
-    return {f"R32-{i}": (f"T{2*i-1:02d}", f"T{2*i:02d}") for i in range(1, 17)}
+    return {f"R32-{i}": (f"T{2 * i - 1:02d}", f"T{2 * i:02d}") for i in range(1, 17)}
 
 
 @pytest.fixture
@@ -36,14 +36,20 @@ def valid_predictions() -> dict[str, SlotPrediction]:
 
     # R32 — winner-only
     for i in range(1, 17):
-        home, away = f"T{2*i-1:02d}", f"T{2*i:02d}"
+        home, away = f"T{2 * i - 1:02d}", f"T{2 * i:02d}"
         preds[f"R32-{i}"] = sp([home, away], home)
 
     # R16 — winner-only
     # R16-k feeds from R32-(2k-1) and R32-(2k)
     r16_teams = [
-        ("T01", "T03"), ("T05", "T07"), ("T09", "T11"), ("T13", "T15"),
-        ("T17", "T19"), ("T21", "T23"), ("T25", "T27"), ("T29", "T31"),
+        ("T01", "T03"),
+        ("T05", "T07"),
+        ("T09", "T11"),
+        ("T13", "T15"),
+        ("T17", "T19"),
+        ("T21", "T23"),
+        ("T25", "T27"),
+        ("T29", "T31"),
     ]
     for i, (h, a) in enumerate(r16_teams, 1):
         preds[f"R16-{i}"] = sp([h, a], h)
@@ -98,12 +104,16 @@ class TestDeriveMatchup:
         result = derive_matchup("FINAL", valid_predictions, r32_seed)
         assert result == ("T01", "T17")
 
-    def test_returns_none_when_upstream_not_predicted(self, r32_seed, valid_predictions):
+    def test_returns_none_when_upstream_not_predicted(
+        self, r32_seed, valid_predictions
+    ):
         preds = copy.deepcopy(valid_predictions)
         del preds["R32-1"]
         assert derive_matchup("R16-1", preds, r32_seed) is None
 
-    def test_returns_none_when_intermediate_slot_missing(self, r32_seed, valid_predictions):
+    def test_returns_none_when_intermediate_slot_missing(
+        self, r32_seed, valid_predictions
+    ):
         preds = copy.deepcopy(valid_predictions)
         del preds["QF-1"]
         assert derive_matchup("SF-1", preds, r32_seed) is None
@@ -179,7 +189,9 @@ class TestValidateBracket:
         preds = copy.deepcopy(valid_predictions)
         preds["R32-3"] = sp(["T05", "T06"], "GER")
         errors = validate_bracket(preds, r32_seed)
-        assert any("R32-3" in e and "winner" in e and "not in teams" in e for e in errors)
+        assert any(
+            "R32-3" in e and "winner" in e and "not in teams" in e for e in errors
+        )
 
     def test_missing_scores_on_sf_fails(self, r32_seed, valid_predictions):
         preds = copy.deepcopy(valid_predictions)

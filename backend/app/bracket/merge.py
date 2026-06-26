@@ -50,7 +50,9 @@ def merge_predictions(
     for slot in ALL_SLOTS:
         if slot in completed_matches:
             if slot in user_predictions:
-                errors.append(f"{slot}: prediction submitted for a locked (completed) slot")
+                errors.append(
+                    f"{slot}: prediction submitted for a locked (completed) slot"
+                )
                 continue
             merged[slot] = slot_prediction_from_match(slot, completed_matches[slot])
             locked.append(slot)

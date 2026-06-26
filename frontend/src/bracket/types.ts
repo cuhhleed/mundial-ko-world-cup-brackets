@@ -45,6 +45,8 @@ export type SlotState = {
   pkScores: [number, number] | null
   locked: boolean
   lockedResult: ApiSlotPrediction | null
+  status?: "scheduled" | "live" | "completed"
+  kickoffTime?: string
 }
 
 export type BracketState = {

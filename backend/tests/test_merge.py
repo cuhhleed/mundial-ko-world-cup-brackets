@@ -43,12 +43,18 @@ def full_user_predictions() -> dict[str, SlotPrediction]:
     preds: dict[str, SlotPrediction] = {}
 
     for i in range(1, 17):
-        home, away = f"T{2*i-1:02d}", f"T{2*i:02d}"
+        home, away = f"T{2 * i - 1:02d}", f"T{2 * i:02d}"
         preds[f"R32-{i}"] = sp([home, away], home)
 
     r16_teams = [
-        ("T01", "T03"), ("T05", "T07"), ("T09", "T11"), ("T13", "T15"),
-        ("T17", "T19"), ("T21", "T23"), ("T25", "T27"), ("T29", "T31"),
+        ("T01", "T03"),
+        ("T05", "T07"),
+        ("T09", "T11"),
+        ("T13", "T15"),
+        ("T17", "T19"),
+        ("T21", "T23"),
+        ("T25", "T27"),
+        ("T29", "T31"),
     ]
     for i, (h, a) in enumerate(r16_teams, 1):
         preds[f"R16-{i}"] = sp([h, a], h)
@@ -81,10 +87,16 @@ class TestNoCompletedMatches:
 class TestTwoCompletedR32Matches:
     def test_merged_result_has_32_slots_and_two_locked(self, full_user_predictions):
         completed = {
-            "R32-1": make_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0),
-            "R32-2": make_match("R32-2", "R32", "T03", "T04", home_score=1, away_score=0),
+            "R32-1": make_match(
+                "R32-1", "R32", "T01", "T02", home_score=2, away_score=0
+            ),
+            "R32-2": make_match(
+                "R32-2", "R32", "T03", "T04", home_score=1, away_score=0
+            ),
         }
-        user_preds = {k: v for k, v in full_user_predictions.items() if k not in completed}
+        user_preds = {
+            k: v for k, v in full_user_predictions.items() if k not in completed
+        }
 
         merged, locked = merge_predictions(user_preds, completed)
 
@@ -93,7 +105,9 @@ class TestTwoCompletedR32Matches:
 
     def test_locked_slots_use_actual_result(self, full_user_predictions):
         completed = {
-            "R32-1": make_match("R32-1", "R32", "T01", "T02", home_score=0, away_score=2),
+            "R32-1": make_match(
+                "R32-1", "R32", "T01", "T02", home_score=0, away_score=2
+            ),
         }
         user_preds = {k: v for k, v in full_user_predictions.items() if k != "R32-1"}
 
@@ -107,7 +121,9 @@ class TestTwoCompletedR32Matches:
 class TestNonScoreBearingLockedSlot:
     def test_no_scores_on_r32_locked_slot(self, full_user_predictions):
         completed = {
-            "R32-3": make_match("R32-3", "R32", "T05", "T06", home_score=3, away_score=1),
+            "R32-3": make_match(
+                "R32-3", "R32", "T05", "T06", home_score=3, away_score=1
+            ),
         }
         user_preds = {k: v for k, v in full_user_predictions.items() if k != "R32-3"}
 
@@ -149,9 +165,14 @@ class TestScoreBearingLockedSlot:
     def test_final_with_pks_includes_pk_fields(self, full_user_predictions):
         completed = {
             "FINAL": make_match(
-                "FINAL", "FINAL", "T01", "T17",
-                home_score=1, away_score=1,
-                pk_home_score=4, pk_away_score=3,
+                "FINAL",
+                "FINAL",
+                "T01",
+                "T17",
+                home_score=1,
+                away_score=1,
+                pk_home_score=4,
+                pk_away_score=3,
                 pk_winner="T01",
             ),
         }
@@ -171,9 +192,14 @@ class TestNonScoreBearingWithPKs:
         """R32 match decided on PKs (scores level at 90') — pk fields must not appear."""
         completed = {
             "R32-5": make_match(
-                "R32-5", "R32", "T09", "T10",
-                home_score=0, away_score=0,
-                pk_home_score=5, pk_away_score=4,
+                "R32-5",
+                "R32",
+                "T09",
+                "T10",
+                home_score=0,
+                away_score=0,
+                pk_home_score=5,
+                pk_away_score=4,
                 pk_winner="T09",
             ),
         }
@@ -191,7 +217,9 @@ class TestNonScoreBearingWithPKs:
 class TestErrorCases:
     def test_prediction_for_locked_slot_raises_error(self, full_user_predictions):
         completed = {
-            "R32-1": make_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0),
+            "R32-1": make_match(
+                "R32-1", "R32", "T01", "T02", home_score=2, away_score=0
+            ),
         }
 
         with pytest.raises(MergePredictionsError) as exc_info:
@@ -212,10 +240,16 @@ class TestCascading:
     def test_r32_completed_winners_feed_r16_derivation(self, full_user_predictions):
         """R32-1 (T01 wins) and R32-2 (T03 wins) completed; R16-1 must still be correct."""
         completed = {
-            "R32-1": make_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0),
-            "R32-2": make_match("R32-2", "R32", "T03", "T04", home_score=1, away_score=0),
+            "R32-1": make_match(
+                "R32-1", "R32", "T01", "T02", home_score=2, away_score=0
+            ),
+            "R32-2": make_match(
+                "R32-2", "R32", "T03", "T04", home_score=1, away_score=0
+            ),
         }
-        user_preds = {k: v for k, v in full_user_predictions.items() if k not in completed}
+        user_preds = {
+            k: v for k, v in full_user_predictions.items() if k not in completed
+        }
 
         merged, locked = merge_predictions(user_preds, completed)
 

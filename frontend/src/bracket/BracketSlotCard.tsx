@@ -1,4 +1,4 @@
-import flagSvg from "../../assets/flag.svg";
+import { TeamFlag } from "../components/TeamFlag";
 import type { ApiSlotPrediction } from "./types";
 
 export type SlotCardData = {
@@ -8,6 +8,8 @@ export type SlotCardData = {
   scores: [number, number] | null;
   pkScores: [number, number] | null;
   locked: boolean;
+  status?: "scheduled" | "live" | "completed";
+  kickoffTime?: string;
 };
 
 type ViewerExtras = {
@@ -38,7 +40,7 @@ function TeamRow({
       ].join(" ")}
     >
       <span className="flex items-center gap-1 truncate max-w-24">
-        <img src={flagSvg} alt="" className="w-3.5 h-3.5 shrink-0" />
+        <TeamFlag code={name} className="w-3.5 h-3.5 shrink-0" />
         <span className="truncate">{name}</span>
       </span>
       {score !== null && (
@@ -50,8 +52,13 @@ function TeamRow({
   );
 }
 
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 export function BracketSlotCard({ slot, viewer }: Props) {
-  const { teams, winner, scores, pkScores, locked } = slot;
+  const { teams, winner, scores, pkScores, locked, status, kickoffTime } = slot;
 
   const team1 = teams?.[0] ?? "TBD";
   const team2 = teams?.[1] ?? "TBD";
@@ -85,6 +92,16 @@ export function BracketSlotCard({ slot, viewer }: Props) {
             </svg>
           </div>
         )}
+        {!locked && !showAccuracyBanner && status === "live" && (
+          <div className="flex items-center justify-center w-5 shrink-0 bg-red-50">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-[blink_1.4s_infinite]" />
+          </div>
+        )}
+        {!locked && !showAccuracyBanner && status !== "live" && kickoffTime && (
+          <div className="flex items-center justify-center w-5 shrink-0 bg-blue-600 text-[8px] font-semibold text-white leading-tight">
+            {formatDate(kickoffTime)}
+          </div>
+        )}
         {showAccuracyBanner && (
           <div
             className={[
@@ -112,6 +129,11 @@ export function BracketSlotCard({ slot, viewer }: Props) {
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12zm0-2a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
             )}
+            {viewer.points !== null && viewer.points > 0 && (
+              <span className="text-[9px] font-bold leading-none">
+                +{viewer.points}
+              </span>
+            )}
           </div>
         )}
         <div className="flex-1 flex flex-col divide-y divide-gray-100">
@@ -136,12 +158,6 @@ export function BracketSlotCard({ slot, viewer }: Props) {
         </div>
       </div>
 
-      {/* Viewer extras: points badge */}
-      {viewer && viewer.points !== null && (
-        <div className="px-2 py-0.5 bg-green-50 border-t border-green-100 text-[10px] text-green-700 font-semibold text-right">
-          +{viewer.points} pts
-        </div>
-      )}
     </div>
   );
 }

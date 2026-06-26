@@ -97,6 +97,8 @@ module "compute" {
   cognito_user_pool_id  = module.auth.user_pool_id
   cognito_app_client_id = module.auth.app_client_id
   google_client_id      = var.google_client_id
+
+  alert_email = var.alert_email
 }
 
 # ---------------------------------------------------------------------------
