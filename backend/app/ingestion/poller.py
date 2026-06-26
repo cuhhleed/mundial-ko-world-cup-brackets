@@ -25,6 +25,12 @@ class IngestionPoller:
         logger.info("poller_starting")
 
         if await self._run_or_shutdown(
+            asyncio.to_thread(load_initial_schedule, "20260611", "20260627"),
+            shutdown,
+        ):
+            return
+
+        if await self._run_or_shutdown(
             asyncio.to_thread(load_initial_schedule, "20260628", "20260719"),
             shutdown,
         ):

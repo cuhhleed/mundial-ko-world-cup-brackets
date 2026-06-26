@@ -53,6 +53,12 @@ def create(user_id: str, email: str) -> UserRecord:
     )
 
 
+def delete(user_id: str) -> None:
+    get_table(settings.USERS_TABLE).delete_item(Key={"user_id": user_id})
+    _seen.discard(user_id)
+    logger.info("user_deleted", user_id=user_id)
+
+
 def get(user_id: str) -> UserRecord | None:
     response = get_table(settings.USERS_TABLE).get_item(
         Key={"user_id": user_id}, ConsistentRead=True

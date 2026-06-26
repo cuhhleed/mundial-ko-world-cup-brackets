@@ -54,9 +54,9 @@ def make_espn_event(
     return {
         "id": event_id,
         "date": date,
+        "season": {"slug": stage},
         "competitions": [
             {
-                "stage": stage,
                 "status": {
                     "type": {
                         "state": state,

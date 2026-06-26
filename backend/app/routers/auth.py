@@ -67,6 +67,7 @@ def signup(
     try:
         bracket = brackets.create_bracket(user_id, body.predictions)
     except BracketValidationError as e:
+        users.delete(user_id)
         raise HTTPException(status_code=400, detail=e.errors)
     except DuplicateBracketError:
         raise HTTPException(status_code=409, detail="User already has a bracket.")

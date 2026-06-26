@@ -13,6 +13,7 @@ _STAGE_TO_ROUND = {
     "semifinals": "SF",
     "final": "FINAL",
     "third-place": "TP",
+    "3rd-place-match": "TP",
 }
 
 _STATUS_MAP = {
@@ -64,11 +65,8 @@ def _assign_slots_by_stage(events: list[dict]) -> list[tuple[dict, str]]:
     """
     groups: dict[str, list[dict]] = {}
     for event in events:
-        competition = event.get("competitions", [{}])[0]
-        stage = competition.get("stage", "")
-        round_name = _STAGE_TO_ROUND.get(stage)
-        if round_name is None:
-            continue
+        stage = event.get("season", {}).get("slug", "")
+        round_name = _STAGE_TO_ROUND.get(stage, "GRP")
         groups.setdefault(round_name, []).append(event)
 
     result: list[tuple[dict, str]] = []
