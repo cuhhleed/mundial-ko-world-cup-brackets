@@ -1,4 +1,4 @@
-import flagSvg from '../../assets/flag.svg'
+import { TeamFlag } from '../components/TeamFlag'
 
 type Props = {
   slotId: string
@@ -112,12 +112,12 @@ export function WizardScorePrompt({
       {/* Teams */}
       <div className="flex items-center gap-2 sm:gap-4">
         <div className="flex flex-col items-center gap-2 sm:gap-3 px-4 sm:px-8 py-4 sm:py-5 rounded-2xl border-2 border-gray-200 bg-white w-32 sm:w-44">
-          <img src={flagSvg} alt="" className="w-10 h-10 sm:w-16 sm:h-16 select-none" />
+          <TeamFlag code={teams[0]} className="w-10 h-10 sm:w-16 sm:h-16" />
           <span className="text-sm sm:text-lg font-bold text-gray-800 text-center leading-tight">{teams[0]}</span>
         </div>
         <span className="text-sm font-bold text-gray-400 tracking-wider">VS</span>
         <div className="flex flex-col items-center gap-2 sm:gap-3 px-4 sm:px-8 py-4 sm:py-5 rounded-2xl border-2 border-gray-200 bg-white w-32 sm:w-44">
-          <img src={flagSvg} alt="" className="w-10 h-10 sm:w-16 sm:h-16 select-none" />
+          <TeamFlag code={teams[1]} className="w-10 h-10 sm:w-16 sm:h-16" />
           <span className="text-sm sm:text-lg font-bold text-gray-800 text-center leading-tight">{teams[1]}</span>
         </div>
       </div>

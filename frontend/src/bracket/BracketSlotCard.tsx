@@ -1,4 +1,4 @@
-import flagSvg from "../../assets/flag.svg";
+import { TeamFlag } from "../components/TeamFlag";
 import type { ApiSlotPrediction } from "./types";
 
 export type SlotCardData = {
@@ -8,6 +8,8 @@ export type SlotCardData = {
   scores: [number, number] | null;
   pkScores: [number, number] | null;
   locked: boolean;
+  status?: "scheduled" | "live" | "completed";
+  kickoffTime?: string;
 };
 
 type ViewerExtras = {
@@ -38,7 +40,7 @@ function TeamRow({
       ].join(" ")}
     >
       <span className="flex items-center gap-1 truncate max-w-24">
-        <img src={flagSvg} alt="" className="w-3.5 h-3.5 shrink-0" />
+        <TeamFlag code={name} className="w-3.5 h-3.5 shrink-0" />
         <span className="truncate">{name}</span>
       </span>
       {score !== null && (
@@ -50,8 +52,13 @@ function TeamRow({
   );
 }
 
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 export function BracketSlotCard({ slot, viewer }: Props) {
-  const { teams, winner, scores, pkScores, locked } = slot;
+  const { teams, winner, scores, pkScores, locked, status, kickoffTime } = slot;
 
   const team1 = teams?.[0] ?? "TBD";
   const team2 = teams?.[1] ?? "TBD";
@@ -83,6 +90,16 @@ export function BracketSlotCard({ slot, viewer }: Props) {
             <svg viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
               <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
             </svg>
+          </div>
+        )}
+        {!locked && !showAccuracyBanner && status === "live" && (
+          <div className="flex items-center justify-center w-5 shrink-0 bg-red-50">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-[blink_1.4s_infinite]" />
+          </div>
+        )}
+        {!locked && !showAccuracyBanner && status !== "live" && kickoffTime && (
+          <div className="flex items-center justify-center w-5 shrink-0 bg-blue-600 text-[8px] font-semibold text-white leading-tight">
+            {formatDate(kickoffTime)}
           </div>
         )}
         {showAccuracyBanner && (

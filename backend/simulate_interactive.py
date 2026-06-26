@@ -12,11 +12,14 @@ Usage:
     python simulate_interactive.py
 """
 
+import asyncio
 import os
 import sys
 from datetime import datetime, timezone
 
 import boto3
+
+os.environ.setdefault("DYNAMODB_ENDPOINT_URL", "http://localhost:8001")
 
 PROJECT_NAME = os.getenv("PROJECT_NAME", "mundial-ko")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
@@ -241,6 +244,28 @@ def write_result(
     return item
 
 
+async def _run_scoring():
+    from app.db.cache import connect, disconnect, update_leaderboard
+    from app.services.brackets import rescore_all_brackets
+
+    result = rescore_all_brackets()
+    if result["updates"]:
+        await connect()
+        for _, user_id, total_points in result["updates"]:
+            await update_leaderboard(user_id, total_points)
+        await disconnect()
+    return result
+
+
+def trigger_scoring():
+    result = asyncio.run(_run_scoring())
+    scored = result["scored"]
+    updated = len(result["updates"])
+    print(f"  Scored {scored} brackets, updated {updated} leaderboard entries")
+    for err in result["errors"]:
+        print(f"  Error: {err}")
+
+
 def parse_slot(slot_id: str) -> tuple[str, int]:
     """Extract round and match_number from a slot_id."""
     if slot_id in ("FINAL", "TP"):
@@ -307,6 +332,7 @@ def run():
         item = write_result(slot_id, rnd, match_number, home, away, result, existing)
         results[slot_id] = item
         simulated_count += 1
+        trigger_scoring()
 
     print(
         f"\nTournament complete! Simulated {simulated_count} matches ({completed_count} were already done)."

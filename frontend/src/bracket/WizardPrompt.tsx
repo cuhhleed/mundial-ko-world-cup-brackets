@@ -1,4 +1,4 @@
-import flagSvg from '../../assets/flag.svg'
+import { TeamFlag } from '../components/TeamFlag'
 
 type Props = {
   slotId: string
@@ -42,7 +42,7 @@ export function WizardPrompt({ slotId, teams, onSelect }: Props) {
                        focus:outline-none focus:border-blue-500
                        active:scale-95 transition-all duration-100 w-44 cursor-pointer"
           >
-            <img src={flagSvg} alt="" className="w-16 h-16 select-none" />
+            <TeamFlag code={team} className="w-16 h-16" />
             <span className="text-lg font-bold text-gray-800 text-center leading-tight">{team}</span>
           </button>
         ))}
