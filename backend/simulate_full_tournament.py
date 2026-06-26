@@ -411,7 +411,9 @@ def simulate():
             f"{match_id:8s}  {result['home_team']:3s} vs {result['away_team']:3s}  {score_line:16s}  → {winner}"
         )
 
-    print(f"\nAll {len(RESULTS)} matches completed. Refresh /bracket to see the full tournament.")
+    print(
+        f"\nAll {len(RESULTS)} matches completed. Refresh /bracket to see the full tournament."
+    )
 
 
 if __name__ == "__main__":

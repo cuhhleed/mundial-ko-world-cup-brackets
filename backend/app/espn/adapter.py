@@ -96,8 +96,12 @@ def espn_event_to_match(event: dict, slot_id: str) -> Match:
         elif competitor.get("homeAway") == "away":
             away_competitor = competitor
 
-    home_team = _normalize_team_code(home_competitor.get("team", {}).get("abbreviation", ""))
-    away_team = _normalize_team_code(away_competitor.get("team", {}).get("abbreviation", ""))
+    home_team = _normalize_team_code(
+        home_competitor.get("team", {}).get("abbreviation", "")
+    )
+    away_team = _normalize_team_code(
+        away_competitor.get("team", {}).get("abbreviation", "")
+    )
 
     state = competition.get("status", {}).get("type", {}).get("state", "pre")
     status = _map_status(state)
@@ -195,7 +199,10 @@ def get_completed_results() -> dict[str, Match]:
     completed = [
         event
         for event in events
-        if event.get("competitions", [{}])[0].get("status", {}).get("type", {}).get("state")
+        if event.get("competitions", [{}])[0]
+        .get("status", {})
+        .get("type", {})
+        .get("state")
         == "post"
     ]
     return espn_events_to_matches(completed)

@@ -73,7 +73,13 @@ async def get_all_matches_with_live_overlay() -> dict[str, Match]:
                 # Merge Redis fields onto the base match
                 merged = {**match.model_dump(), **redis_data}
                 # Coerce numeric fields back to int | None
-                for field in ("home_score", "away_score", "pk_home_score", "pk_away_score", "match_number"):
+                for field in (
+                    "home_score",
+                    "away_score",
+                    "pk_home_score",
+                    "pk_away_score",
+                    "match_number",
+                ):
                     raw = merged.get(field)
                     if raw is not None and raw != "None":
                         try:
@@ -93,7 +99,13 @@ async def get_match_by_id(match_id: str) -> Match | None:
     if redis_data:
         # Coerce numeric fields
         coerced: dict = dict(redis_data)
-        for field in ("home_score", "away_score", "pk_home_score", "pk_away_score", "match_number"):
+        for field in (
+            "home_score",
+            "away_score",
+            "pk_home_score",
+            "pk_away_score",
+            "match_number",
+        ):
             raw = coerced.get(field)
             if raw is not None and raw != "None":
                 try:

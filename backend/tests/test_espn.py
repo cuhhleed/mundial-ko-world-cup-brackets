@@ -60,7 +60,11 @@ def make_espn_event(
                 "status": {
                     "type": {
                         "state": state,
-                        "name": ("STATUS_SCHEDULED" if state == "pre" else "STATUS_IN_PROGRESS"),
+                        "name": (
+                            "STATUS_SCHEDULED"
+                            if state == "pre"
+                            else "STATUS_IN_PROGRESS"
+                        ),
                         "completed": state == "post",
                     }
                 },
@@ -126,7 +130,9 @@ class TestScoreExtraction:
         assert match.away_score is None
 
     def test_completed_match_scores_parsed(self):
-        event = make_espn_event(state="post", home_score="2", away_score="1", home_winner=True)
+        event = make_espn_event(
+            state="post", home_score="2", away_score="1", home_winner=True
+        )
         match = espn_event_to_match(event, "R32-1")
         assert match.home_score == 2
         assert match.away_score == 1
@@ -262,7 +268,9 @@ class TestSlotAssignment:
 
 
 class TestFetchScoreboard:
-    def _make_response(self, status_code: int, json_data: dict | None = None) -> MagicMock:
+    def _make_response(
+        self, status_code: int, json_data: dict | None = None
+    ) -> MagicMock:
         resp = MagicMock()
         resp.status_code = status_code
         if json_data is not None:
@@ -330,7 +338,9 @@ class TestFetchLiveScores:
         in_event = make_espn_event(event_id="2", state="in")
         post_event = make_espn_event(event_id="3", state="post")
 
-        mock_response = self._make_response(200, {"events": [pre_event, in_event, post_event]})
+        mock_response = self._make_response(
+            200, {"events": [pre_event, in_event, post_event]}
+        )
         mock_get = MagicMock(return_value=mock_response)
 
         monkeypatch.setattr(espn_client_module, "_client", MagicMock(get=mock_get))

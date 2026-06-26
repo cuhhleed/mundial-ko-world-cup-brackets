@@ -75,7 +75,9 @@ def simulate():
         expr_names = {"#s": "status"}
 
         if "pk_home_score" in result:
-            update_expr += ", pk_home_score = :pkh, pk_away_score = :pka, pk_winner = :pkw"
+            update_expr += (
+                ", pk_home_score = :pkh, pk_away_score = :pka, pk_winner = :pkw"
+            )
             expr_values[":pkh"] = result["pk_home_score"]
             expr_values[":pka"] = result["pk_away_score"]
             expr_values[":pkw"] = result["pk_winner"]

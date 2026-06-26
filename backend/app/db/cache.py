@@ -18,7 +18,9 @@ async def connect() -> None:
         socket_connect_timeout=5,
     )
     await _client.ping()
-    logger.info("cache_connected", host=settings.REDIS_ENDPOINT, port=settings.REDIS_PORT)
+    logger.info(
+        "cache_connected", host=settings.REDIS_ENDPOINT, port=settings.REDIS_PORT
+    )
 
 
 async def disconnect() -> None:

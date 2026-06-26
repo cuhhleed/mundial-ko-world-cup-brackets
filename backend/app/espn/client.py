@@ -21,7 +21,9 @@ def _get_client() -> httpx.Client:
     return _client
 
 
-def _request_with_retry(path: str, params: dict | None = None, max_retries: int = 3) -> dict:
+def _request_with_retry(
+    path: str, params: dict | None = None, max_retries: int = 3
+) -> dict:
     client = _get_client()
     delays = [0.5, 1.0, 2.0]
 
@@ -76,7 +78,11 @@ def fetch_live_scores() -> list[dict]:
     return [
         event
         for event in events
-        if event.get("competitions", [{}])[0].get("status", {}).get("type", {}).get("state") == "in"
+        if event.get("competitions", [{}])[0]
+        .get("status", {})
+        .get("type", {})
+        .get("state")
+        == "in"
     ]
 
 

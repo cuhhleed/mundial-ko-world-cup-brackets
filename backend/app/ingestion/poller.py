@@ -58,7 +58,9 @@ class IngestionPoller:
         task = asyncio.ensure_future(task_coro)
         waiter = asyncio.ensure_future(shutdown.wait())
 
-        done, pending = await asyncio.wait({task, waiter}, return_when=asyncio.FIRST_COMPLETED)
+        done, pending = await asyncio.wait(
+            {task, waiter}, return_when=asyncio.FIRST_COMPLETED
+        )
 
         for p in pending:
             p.cancel()
@@ -89,7 +91,9 @@ class IngestionPoller:
 
         for match in scheduled.values():
             try:
-                kickoff = datetime.fromisoformat(match.kickoff_time.replace("Z", "+00:00"))
+                kickoff = datetime.fromisoformat(
+                    match.kickoff_time.replace("Z", "+00:00")
+                )
             except (ValueError, AttributeError):
                 continue
 
@@ -111,7 +115,9 @@ class IngestionPoller:
         matches = espn_events_to_matches(events)
 
         for match_id, match in matches.items():
-            string_data = {k: str(v) for k, v in match.model_dump(exclude_none=True).items()}
+            string_data = {
+                k: str(v) for k, v in match.model_dump(exclude_none=True).items()
+            }
             await set_match_state(match_id, string_data)
 
             previous_status = self._match_states.get(match_id)

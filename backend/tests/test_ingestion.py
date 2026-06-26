@@ -49,7 +49,11 @@ class TestCacheOperations:
         import app.db.cache as cache_module
 
         with patch.object(cache_module, "_client", mock_redis):
-            run_async(cache_module.set_match_state("R32-1", {"status": "live", "home_score": "1"}))
+            run_async(
+                cache_module.set_match_state(
+                    "R32-1", {"status": "live", "home_score": "1"}
+                )
+            )
 
         mock_redis.hset.assert_called_once_with(
             "match:R32-1", mapping={"status": "live", "home_score": "1"}
@@ -145,12 +149,14 @@ class TestComputeSleepDuration:
         poller._match_states = {}
 
         # Kickoff 1000 seconds from now → sleep = 1000 - 300 = 700, clamped to [60, 3600]
-        future_kickoff = (datetime.now(tz=timezone.utc) + timedelta(seconds=1000)).strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
+        future_kickoff = (
+            datetime.now(tz=timezone.utc) + timedelta(seconds=1000)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
         match = make_match(status="scheduled", kickoff_time=future_kickoff)
 
-        with patch("app.ingestion.poller.get_scheduled_matches", return_value={"R32-1": match}):
+        with patch(
+            "app.ingestion.poller.get_scheduled_matches", return_value={"R32-1": match}
+        ):
             result = poller._compute_sleep_duration()
 
         assert 690 <= result <= 710  # 700 ± small timing tolerance
@@ -164,12 +170,14 @@ class TestComputeSleepDuration:
         poller._match_states = {}
 
         # Kickoff 100 seconds from now → 100 - 300 = -200, clamped to 60
-        near_kickoff = (datetime.now(tz=timezone.utc) + timedelta(seconds=100)).strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
+        near_kickoff = (
+            datetime.now(tz=timezone.utc) + timedelta(seconds=100)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
         match = make_match(status="scheduled", kickoff_time=near_kickoff)
 
-        with patch("app.ingestion.poller.get_scheduled_matches", return_value={"R32-1": match}):
+        with patch(
+            "app.ingestion.poller.get_scheduled_matches", return_value={"R32-1": match}
+        ):
             result = poller._compute_sleep_duration()
 
         assert result == 60
@@ -183,12 +191,14 @@ class TestComputeSleepDuration:
         poller._match_states = {}
 
         # Kickoff 10000 seconds from now → 10000 - 300 = 9700, clamped to 3600
-        far_kickoff = (datetime.now(tz=timezone.utc) + timedelta(seconds=10000)).strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
+        far_kickoff = (
+            datetime.now(tz=timezone.utc) + timedelta(seconds=10000)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
         match = make_match(status="scheduled", kickoff_time=far_kickoff)
 
-        with patch("app.ingestion.poller.get_scheduled_matches", return_value={"R32-1": match}):
+        with patch(
+            "app.ingestion.poller.get_scheduled_matches", return_value={"R32-1": match}
+        ):
             result = poller._compute_sleep_duration()
 
         assert result == 3600
@@ -220,7 +230,9 @@ class TestPollCycleTransitionDetection:
             patch("app.ingestion.poller.set_match_state", new_callable=AsyncMock),
             patch("app.ingestion.poller.put_match") as mock_put,
             patch("app.ingestion.poller.emit_heartbeat"),
-            patch("app.ingestion.poller.rescore_all_brackets", return_value=canned_result),
+            patch(
+                "app.ingestion.poller.rescore_all_brackets", return_value=canned_result
+            ),
             patch("app.ingestion.poller.update_leaderboard", new_callable=AsyncMock),
             patch("asyncio.to_thread", side_effect=_fake_to_thread),
         ):
@@ -273,7 +285,9 @@ class TestPollCycleTransitionDetection:
             patch("app.ingestion.poller.set_match_state", new_callable=AsyncMock),
             patch("app.ingestion.poller.put_match") as mock_put,
             patch("app.ingestion.poller.emit_heartbeat"),
-            patch("app.ingestion.poller.rescore_all_brackets", return_value=canned_result),
+            patch(
+                "app.ingestion.poller.rescore_all_brackets", return_value=canned_result
+            ),
             patch("app.ingestion.poller.update_leaderboard", new_callable=AsyncMock),
             patch("asyncio.to_thread", side_effect=_fake_to_thread),
         ):
@@ -380,7 +394,9 @@ class TestRescoreAllBrackets:
                 "app.services.brackets.get_all_brackets",
                 return_value=[bracket_a, bracket_b],
             ),
-            patch("app.services.brackets.get_completed_matches", return_value=completed),
+            patch(
+                "app.services.brackets.get_completed_matches", return_value=completed
+            ),
             patch("app.services.brackets.get_table", return_value=mock_table),
         ):
             from app.services.brackets import rescore_all_brackets
@@ -391,7 +407,9 @@ class TestRescoreAllBrackets:
         assert result["failed"] == 0
         assert mock_table.update_item.call_count == 2
 
-        call_keys = [c.kwargs["Key"]["bracket_id"] for c in mock_table.update_item.call_args_list]
+        call_keys = [
+            c.kwargs["Key"]["bracket_id"] for c in mock_table.update_item.call_args_list
+        ]
         assert "b-1" in call_keys
         assert "b-2" in call_keys
 
@@ -408,7 +426,9 @@ class TestRescoreAllBrackets:
                 "app.services.brackets.get_all_brackets",
                 return_value=[bracket_a, bracket_b],
             ),
-            patch("app.services.brackets.get_completed_matches", return_value=completed),
+            patch(
+                "app.services.brackets.get_completed_matches", return_value=completed
+            ),
             patch("app.services.brackets.get_table", return_value=mock_table),
         ):
             from app.services.brackets import rescore_all_brackets
@@ -430,7 +450,9 @@ class TestTriggerScoring:
         from app.ingestion.poller import IngestionPoller
 
         poller = IngestionPoller()
-        match = make_match(match_id="R32-1", status="completed", home_score=1, away_score=0)
+        match = make_match(
+            match_id="R32-1", status="completed", home_score=1, away_score=0
+        )
 
         canned_result = {
             "scored": 2,
@@ -442,7 +464,9 @@ class TestTriggerScoring:
         mock_update_leaderboard = AsyncMock()
 
         with (
-            patch("app.ingestion.poller.rescore_all_brackets", return_value=canned_result),
+            patch(
+                "app.ingestion.poller.rescore_all_brackets", return_value=canned_result
+            ),
             patch("app.ingestion.poller.update_leaderboard", mock_update_leaderboard),
             patch("asyncio.to_thread", side_effect=_fake_to_thread),
         ):
@@ -480,7 +504,9 @@ class TestTriggerScoring:
             patch("app.ingestion.poller.set_match_state", new_callable=AsyncMock),
             patch("app.ingestion.poller.put_match"),
             patch("app.ingestion.poller.emit_heartbeat"),
-            patch("app.ingestion.poller.rescore_all_brackets", return_value=canned_result),
+            patch(
+                "app.ingestion.poller.rescore_all_brackets", return_value=canned_result
+            ),
             patch("app.ingestion.poller.update_leaderboard", mock_update_leaderboard),
             patch("asyncio.to_thread", side_effect=_fake_to_thread),
         ):

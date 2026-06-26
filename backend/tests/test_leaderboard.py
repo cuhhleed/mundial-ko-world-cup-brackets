@@ -107,7 +107,9 @@ class TestGetLeaderboard:
         assert client.get("/api/leaderboard?limit=0").status_code == 422
         assert client.get("/api/leaderboard?limit=201").status_code == 422
 
-    def test_leaderboard_missing_user_shows_unknown(self, client: TestClient, monkeypatch):
+    def test_leaderboard_missing_user_shows_unknown(
+        self, client: TestClient, monkeypatch
+    ):
         create_user("uid-known", "known@test.com")
 
         async def mock_get_top(limit):

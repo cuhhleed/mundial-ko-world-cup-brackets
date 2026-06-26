@@ -120,8 +120,8 @@ def main():
     confirmed = {}
     teams = list(TEAMS_WITH_SUGGESTIONS.keys())
 
-    print(f"\nMap each FIFA code to a HatScripts code (ISO 3166-1 alpha-2).")
-    print(f"Press Enter to accept the suggestion, or type a different code.\n")
+    print("\nMap each FIFA code to a HatScripts code (ISO 3166-1 alpha-2).")
+    print("Press Enter to accept the suggestion, or type a different code.\n")
 
     for team in teams:
         suggestion = TEAMS_WITH_SUGGESTIONS[team]
@@ -142,7 +142,9 @@ def main():
         except Exception as e:
             print(f"  FAIL  {team} <- {code}.svg  ({e})")
 
-    print(f"\nDone: {success}/{len(confirmed)} flags saved to {os.path.abspath(DEST_DIR)}")
+    print(
+        f"\nDone: {success}/{len(confirmed)} flags saved to {os.path.abspath(DEST_DIR)}"
+    )
 
 
 if __name__ == "__main__":

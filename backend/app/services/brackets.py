@@ -47,7 +47,9 @@ def create_bracket(
 
     if completed_matches:
         try:
-            merged_predictions, locked_slots = merge_predictions(predictions, completed_matches)
+            merged_predictions, locked_slots = merge_predictions(
+                predictions, completed_matches
+            )
         except MergePredictionsError as e:
             raise BracketValidationError(e.errors)
     else:
@@ -62,7 +64,8 @@ def create_bracket(
     created_at = datetime.now(timezone.utc).isoformat()
 
     serialized_predictions = {
-        slot: pred.model_dump(exclude_none=True) for slot, pred in merged_predictions.items()
+        slot: pred.model_dump(exclude_none=True)
+        for slot, pred in merged_predictions.items()
     }
 
     get_table(settings.BRACKETS_TABLE).put_item(
@@ -81,7 +84,9 @@ def create_bracket(
         get_table(settings.USERS_TABLE).update_item(
             Key={"user_id": user_id},
             UpdateExpression="SET bracket_id = :bid",
-            ConditionExpression=("attribute_not_exists(bracket_id) OR bracket_id = :null"),
+            ConditionExpression=(
+                "attribute_not_exists(bracket_id) OR bracket_id = :null"
+            ),
             ExpressionAttributeValues={":bid": bracket_id, ":null": None},
         )
     except botocore.exceptions.ClientError as e:
@@ -103,11 +108,15 @@ def create_bracket(
 
 
 def get_bracket(bracket_id: str) -> Bracket | None:
-    response = get_table(settings.BRACKETS_TABLE).get_item(Key={"bracket_id": bracket_id})
+    response = get_table(settings.BRACKETS_TABLE).get_item(
+        Key={"bracket_id": bracket_id}
+    )
     item = response.get("Item")
     if item is None:
         return None
-    item["predictions"] = {k: SlotPrediction(**v) for k, v in item["predictions"].items()}
+    item["predictions"] = {
+        k: SlotPrediction(**v) for k, v in item["predictions"].items()
+    }
     return Bracket(**item)
 
 
@@ -126,7 +135,9 @@ def get_all_brackets() -> list[Bracket]:
 
     brackets = []
     for item in items:
-        item["predictions"] = {k: SlotPrediction(**v) for k, v in item["predictions"].items()}
+        item["predictions"] = {
+            k: SlotPrediction(**v) for k, v in item["predictions"].items()
+        }
         brackets.append(Bracket(**item))
     return brackets
 
@@ -154,7 +165,9 @@ def rescore_all_brackets() -> dict:
             scored_count += 1
         except Exception as exc:
             msg = f"{bracket.bracket_id}: {exc}"
-            logger.error("rescore_bracket_failed", bracket_id=bracket.bracket_id, error=str(exc))
+            logger.error(
+                "rescore_bracket_failed", bracket_id=bracket.bracket_id, error=str(exc)
+            )
             errors.append(msg)
             failed_count += 1
 

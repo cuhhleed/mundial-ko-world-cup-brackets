@@ -94,7 +94,9 @@ def _redirect_dynamo_endpoint(monkeypatch):
     Docker-internal ``dynamodb-local:8000`` that ``.env`` provides."""
     import app.db.dynamo as _dynamo_module
 
-    monkeypatch.setattr(settings, "DYNAMODB_ENDPOINT_URL", settings.TEST_DYNAMODB_ENDPOINT_URL)
+    monkeypatch.setattr(
+        settings, "DYNAMODB_ENDPOINT_URL", settings.TEST_DYNAMODB_ENDPOINT_URL
+    )
     _dynamo_module._resource = None
     yield
     _dynamo_module._resource = None

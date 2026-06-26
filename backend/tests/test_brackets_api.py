@@ -142,7 +142,9 @@ class TestCreateBracket:
         assert data["created_at"] != ""
         assert "predictions" in data
 
-    def test_create_bracket_updates_user_record(self, client: TestClient, valid_predictions):
+    def test_create_bracket_updates_user_record(
+        self, client: TestClient, valid_predictions
+    ):
         _seed_user()
         token = make_token()
         post_resp = client.post(
@@ -153,7 +155,9 @@ class TestCreateBracket:
         assert post_resp.status_code == 201
         bracket_id = post_resp.json()["bracket_id"]
 
-        me_resp = client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
+        me_resp = client.get(
+            "/api/users/me", headers={"Authorization": f"Bearer {token}"}
+        )
         assert me_resp.status_code == 200
         assert me_resp.json()["bracket_id"] == bracket_id
 
@@ -210,12 +214,18 @@ class TestLateBracket:
     def test_late_bracket_with_locked_slots_returns_201(
         self, client: TestClient, valid_predictions
     ):
-        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
-        _seed_match("R32-2", "R32", "T03", "T04", home_score=1, away_score=0, status="completed")
+        _seed_match(
+            "R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed"
+        )
+        _seed_match(
+            "R32-2", "R32", "T03", "T04", home_score=1, away_score=0, status="completed"
+        )
 
         _seed_user()
         token = make_token()
-        partial = {k: v for k, v in valid_predictions.items() if k not in {"R32-1", "R32-2"}}
+        partial = {
+            k: v for k, v in valid_predictions.items() if k not in {"R32-1", "R32-2"}
+        }
         resp = client.post(
             "/api/brackets",
             json={"predictions": partial},
@@ -226,8 +236,12 @@ class TestLateBracket:
         assert set(data["locked_slots"]) == {"R32-1", "R32-2"}
         assert len(data["predictions"]) == 32
 
-    def test_prediction_for_locked_slot_returns_400(self, client: TestClient, valid_predictions):
-        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
+    def test_prediction_for_locked_slot_returns_400(
+        self, client: TestClient, valid_predictions
+    ):
+        _seed_match(
+            "R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed"
+        )
 
         _seed_user()
         token = make_token()
@@ -241,12 +255,16 @@ class TestLateBracket:
     def test_missing_prediction_for_open_slot_returns_400(
         self, client: TestClient, valid_predictions
     ):
-        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
+        _seed_match(
+            "R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed"
+        )
 
         _seed_user()
         token = make_token()
         # Remove R32-1 (locked) AND R32-3 (open, missing)
-        partial = {k: v for k, v in valid_predictions.items() if k not in {"R32-1", "R32-3"}}
+        partial = {
+            k: v for k, v in valid_predictions.items() if k not in {"R32-1", "R32-3"}
+        }
         resp = client.post(
             "/api/brackets",
             json={"predictions": partial},
@@ -284,7 +302,9 @@ class TestGetBracketById:
     def test_get_bracket_overlays_completed_match_result(
         self, client: TestClient, valid_predictions
     ):
-        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
+        _seed_match(
+            "R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed"
+        )
 
         _seed_user()
         token = make_token()
@@ -318,14 +338,18 @@ class TestGetMyBracket:
         assert post_resp.status_code == 201
         bracket_id = post_resp.json()["bracket_id"]
 
-        resp = client.get("/api/brackets/me", headers={"Authorization": f"Bearer {token}"})
+        resp = client.get(
+            "/api/brackets/me", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 200
         assert resp.json()["bracket_id"] == bracket_id
 
     def test_get_my_bracket_no_bracket_returns_404(self, client: TestClient):
         _seed_user()
         token = make_token()
-        resp = client.get("/api/brackets/me", headers={"Authorization": f"Bearer {token}"})
+        resp = client.get(
+            "/api/brackets/me", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 404
 
     def test_get_my_bracket_unauthenticated_returns_401(self, client: TestClient):
@@ -334,9 +358,13 @@ class TestGetMyBracket:
 
 
 class TestScoringIntegration:
-    def test_completed_r32_match_scores_correct_winner(self, client: TestClient, valid_predictions):
+    def test_completed_r32_match_scores_correct_winner(
+        self, client: TestClient, valid_predictions
+    ):
         # Seed a completed R32-1 match where T01 wins 2-0 (T01 is the predicted winner)
-        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
+        _seed_match(
+            "R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed"
+        )
 
         _seed_user()
         token = make_token()
@@ -373,7 +401,9 @@ class TestBracketTemplate:
             assert slot_data["result"] is None
 
     def test_template_shows_correct_locked_and_open_statuses(self, client: TestClient):
-        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
+        _seed_match(
+            "R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed"
+        )
         _seed_match("R32-2", "R32", "T03", "T04", status="scheduled")
 
         resp = client.get("/api/brackets/template")
