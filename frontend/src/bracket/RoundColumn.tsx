@@ -40,7 +40,7 @@ export function RoundColumn({
     >
       {/* Round label */}
       <div
-        className="text-xs font-semibold text-gray-400 uppercase tracking-wider text-center pb-2"
+        className="text-xs font-semibold text-body-faint uppercase tracking-wider text-center pb-2"
         style={{ width: colWidth }}
       >
         {label}
@@ -88,7 +88,7 @@ export function RoundColumn({
               <Fragment key={k}>
                 {/* Horizontal arm — top feeder */}
                 <div
-                  className="absolute bg-gray-200"
+                  className="absolute bg-connector"
                   style={{
                     top: topCenterY - 1,
                     left: colWidth,
@@ -98,7 +98,7 @@ export function RoundColumn({
                 />
                 {/* Horizontal arm — bottom feeder */}
                 <div
-                  className="absolute bg-gray-200"
+                  className="absolute bg-connector"
                   style={{
                     top: bottomCenterY - 1,
                     left: colWidth,
@@ -108,7 +108,7 @@ export function RoundColumn({
                 />
                 {/* Vertical bar joining the two arms */}
                 <div
-                  className="absolute bg-gray-200"
+                  className="absolute bg-connector"
                   style={{
                     top: topCenterY,
                     left: colWidth + CONN_W / 2 - 1,
@@ -118,7 +118,7 @@ export function RoundColumn({
                 />
                 {/* Horizontal arm from midpoint → next column */}
                 <div
-                  className="absolute bg-gray-200"
+                  className="absolute bg-connector"
                   style={{
                     top: midY - 1,
                     left: colWidth + CONN_W / 2,

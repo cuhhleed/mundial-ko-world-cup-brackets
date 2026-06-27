@@ -41,14 +41,14 @@ export function WizardProgressBar({ currentStep, onRoundClick }: Props) {
                 'text-xs font-semibold text-center py-0.5 rounded transition-colors',
                 isAccessible
                   ? 'text-blue-700 hover:text-blue-900 cursor-pointer'
-                  : 'text-gray-300 cursor-default',
+                  : 'text-body-disabled cursor-default',
               ].join(' ')}
             >
               {round.label}
             </button>
 
             {/* Progress track */}
-            <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
+            <div className="h-2 rounded-full bg-connector overflow-hidden">
               <div
                 className={[
                   'h-full rounded-full transition-all duration-300',
@@ -59,7 +59,7 @@ export function WizardProgressBar({ currentStep, onRoundClick }: Props) {
             </div>
 
             {/* Match indicators */}
-            <div className="flex gap-0.5 justify-center flex-wrap">
+            <div className="hidden md:flex gap-0.5 justify-center flex-wrap">
               {Array.from({ length: total }, (_, j) => {
                 const stepIdx = start + j
                 const isDone = stepIdx < currentStep
@@ -73,7 +73,7 @@ export function WizardProgressBar({ currentStep, onRoundClick }: Props) {
                         ? 'bg-green-500'
                         : isActive
                         ? 'bg-blue-500'
-                        : 'bg-gray-300',
+                        : 'bg-body-disabled',
                     ].join(' ')}
                   />
                 )
@@ -84,7 +84,7 @@ export function WizardProgressBar({ currentStep, onRoundClick }: Props) {
       })}
 
       {/* Overall step label */}
-      <div className="pl-2 text-xs text-gray-400 whitespace-nowrap">
+      <div className="pl-2 text-xs text-body-faint whitespace-nowrap">
         {Math.min(currentStep, WIZARD_SLOT_ORDER.length)}/{WIZARD_SLOT_ORDER.length}
       </div>
     </div>

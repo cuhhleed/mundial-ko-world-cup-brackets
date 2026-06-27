@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from '@/auth/AuthContext'
+import { ThemeProvider } from '@/theme/ThemeContext'
 import { RootLayout } from '@/layouts/RootLayout'
 import { Home } from '@/pages/Home'
 import { Bracket } from '@/pages/Bracket'
@@ -11,9 +12,10 @@ import { config } from '@/config'
 
 export function App() {
   return (
-    <GoogleOAuthProvider clientId={config.googleClientId}>
-      <BrowserRouter>
-        <AuthProvider>
+    <ThemeProvider>
+      <GoogleOAuthProvider clientId={config.googleClientId}>
+        <BrowserRouter>
+          <AuthProvider>
           <Routes>
             <Route element={<RootLayout />}>
               <Route path="/" element={<Home />} />
@@ -23,8 +25,9 @@ export function App() {
               <Route path="/login" element={<Login />} />
             </Route>
           </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </GoogleOAuthProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </GoogleOAuthProvider>
+    </ThemeProvider>
   )
 }

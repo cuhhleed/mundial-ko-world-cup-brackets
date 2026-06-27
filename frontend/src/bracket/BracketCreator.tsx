@@ -30,8 +30,8 @@ export function BracketCreator() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="flex flex-col items-center gap-3 text-gray-400">
-          <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+        <div className="flex flex-col items-center gap-3 text-body-faint">
+          <div className="w-8 h-8 border-2 border-edge border-t-blue-500 rounded-full animate-spin" />
           <p className="text-sm">Loading bracket…</p>
         </div>
       </div>

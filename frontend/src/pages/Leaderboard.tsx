@@ -61,15 +61,15 @@ const MEDALS: Record<number, string> = { 1: '\u{1F947}', 2: '\u{1F948}', 3: '\u{
 
 function LeaderboardRow({ entry, isCurrentUser, index, isTopThree }: LeaderboardRowProps) {
   const medal = MEDALS[entry.rank]
-  const altBg = index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+  const altBg = index % 2 === 0 ? 'bg-surface' : 'bg-surface-alt'
 
   let rowBg: string
   let leftAccent: string
   if (isCurrentUser) {
-    rowBg = 'bg-blue-50'
-    leftAccent = 'border-l-2 border-l-blue-500'
+    rowBg = altBg
+    leftAccent = 'border-l-4 border-l-amber-500'
   } else {
-    rowBg = isTopThree ? 'bg-white' : altBg
+    rowBg = altBg
     leftAccent = ''
   }
 
@@ -80,18 +80,18 @@ function LeaderboardRow({ entry, isCurrentUser, index, isTopThree }: Leaderboard
 
   return (
     <div
-      className={`flex items-center gap-4 ${rowPadding} border-b border-gray-100 ${rowBg} ${leftAccent}`}
+      className={`flex items-center gap-4 ${rowPadding} border-b border-edge-light ${rowBg} ${leftAccent}`}
     >
-      <span className={`w-10 shrink-0 ${rankSize} font-bold text-gray-500`}>
+      <span className={`w-10 shrink-0 ${rankSize} font-bold text-body-muted`}>
         {medal ? `${medal}` : entry.rank}
       </span>
-      <span className={`flex-1 ${nameSize} font-medium text-gray-800`}>
+      <span className={`flex-1 ${nameSize} font-medium text-body`}>
         {entry.display_name}
         {isCurrentUser && (
-          <span className="ml-2 text-xs font-semibold text-blue-500">(you)</span>
+          <span className="ml-2 text-xs font-semibold text-amber-500">(you)</span>
         )}
       </span>
-      <span className={`${pointsSize} text-gray-700`}>{entry.total_points}</span>
+      <span className={`${pointsSize} text-body-secondary`}>{entry.total_points}</span>
     </div>
   )
 }
@@ -148,7 +148,7 @@ export function Leaderboard() {
   if (loading && entries.length === 0) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-edge border-t-blue-500 rounded-full animate-spin" />
       </div>
     )
   }
@@ -157,7 +157,7 @@ export function Leaderboard() {
     return (
       <div className="space-y-6">
         <h1 className="text-4xl font-bold">Leaderboard</h1>
-        <p className="text-gray-600">{error}</p>
+        <p className="text-body-muted">{error}</p>
         <button
           className="text-blue-600 underline"
           onClick={() => setRefreshKey((k) => k + 1)}
@@ -172,7 +172,7 @@ export function Leaderboard() {
     return (
       <div className="space-y-6">
         <h1 className="text-4xl font-bold">Leaderboard</h1>
-        <p className="text-gray-600">No rankings yet.</p>
+        <p className="text-body-muted">No rankings yet.</p>
       </div>
     )
   }
@@ -183,14 +183,14 @@ export function Leaderboard() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold">Leaderboard</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-body-muted">
             {totalParticipants} {totalParticipants === 1 ? 'player' : 'players'}
           </p>
         </div>
         <button
           onClick={() => setRefreshKey((k) => k + 1)}
           disabled={loading}
-          className="mt-1 flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 shadow-sm hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          className="mt-1 flex items-center gap-1.5 rounded-lg border border-edge bg-surface px-3 py-1.5 text-sm text-body-muted shadow-sm hover:bg-surface-alt disabled:opacity-50 transition-colors"
           aria-label="Refresh leaderboard"
         >
           <svg
@@ -214,44 +214,27 @@ export function Leaderboard() {
       {showBanner && myRank && <YourRankBanner myRank={myRank} />}
 
       {/* Table card */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-edge bg-surface shadow-sm">
         {/* Column headers */}
-        <div className="flex items-center gap-4 bg-gray-50 px-4 py-2.5 border-b border-gray-200">
-          <span className="w-10 shrink-0 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <div className="flex items-center gap-4 bg-blue-600 px-4 py-2.5 border-b border-edge">
+          <span className="w-10 shrink-0 text-xs font-semibold uppercase tracking-wider text-white">
             Rank
           </span>
-          <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-white">
             Player
           </span>
-          <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+          <span className="text-xs font-semibold uppercase tracking-wider text-white">
             Points
           </span>
         </div>
 
-        {/* Top 3 */}
-        {entries.filter((e) => e.rank <= 3).map((entry, index) => (
+        {entries.map((entry, index) => (
           <LeaderboardRow
             key={entry.rank}
             entry={entry}
             isCurrentUser={myRank != null && entry.rank === myRank.rank}
             index={index}
-            isTopThree
-          />
-        ))}
-
-        {/* Divider between top 3 and the rest */}
-        {entries.some((e) => e.rank > 3) && (
-          <div className="border-b-2 border-gray-200" />
-        )}
-
-        {/* Remaining rows */}
-        {entries.filter((e) => e.rank > 3).map((entry, index) => (
-          <LeaderboardRow
-            key={entry.rank}
-            entry={entry}
-            isCurrentUser={myRank != null && entry.rank === myRank.rank}
-            index={index}
-            isTopThree={false}
+            isTopThree={entry.rank <= 3}
           />
         ))}
       </div>

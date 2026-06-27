@@ -69,7 +69,7 @@ export function LiveBracket() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-edge border-t-blue-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -78,7 +78,7 @@ export function LiveBracket() {
     return (
       <div className="space-y-6">
         <h1 className="text-4xl font-bold">Live Bracket</h1>
-        <p className="text-gray-600">{error}</p>
+        <p className="text-body-muted">{error}</p>
       </div>
     );
   }

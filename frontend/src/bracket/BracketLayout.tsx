@@ -108,7 +108,7 @@ export function BracketLayout({ bracketState, viewerExtras }: Props) {
       className="flex flex-col"
       style={{ minWidth: FINALS_COL_W }}
     >
-      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider text-center pb-2">
+      <div className="text-xs font-semibold text-body-faint uppercase tracking-wider text-center pb-2">
         Finals
       </div>
 
@@ -126,7 +126,7 @@ export function BracketLayout({ bracketState, viewerExtras }: Props) {
           className="absolute flex flex-col items-center gap-1"
           style={{ top: TP_CENTER_Y - CARD_H / 2 - 20, left: 0, width: FINALS_COL_W }}
         >
-          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+          <span className="text-[10px] font-semibold text-body-faint uppercase tracking-wider">
             3rd Place
           </span>
           <BracketSlotCard slot={tpSlot} viewer={viewerExtras?.['TP']} />
@@ -149,7 +149,7 @@ export function BracketLayout({ bracketState, viewerExtras }: Props) {
                 'px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors',
                 mobileTab === tab.id
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+                  : 'bg-surface-alt text-body-muted hover:bg-surface-hover',
               ].join(' ')}
             >
               {tab.label}
@@ -247,8 +247,8 @@ export function BracketLayout({ bracketState, viewerExtras }: Props) {
                   className={`absolute ${hasRight ? 'w-[46%]' : 'w-[60%]'}`}
                   style={{ top: leftY[id], left: 0 }}
                 >
-                  {id === 'FINAL' && <p className="text-[10px] font-semibold text-gray-400 uppercase mb-0.5">Final</p>}
-                  {id === 'TP' && <p className="text-[10px] font-semibold text-gray-400 uppercase mb-0.5">3rd Place</p>}
+                  {id === 'FINAL' && <p className="text-[10px] font-semibold text-body-faint uppercase mb-0.5">Final</p>}
+                  {id === 'TP' && <p className="text-[10px] font-semibold text-body-faint uppercase mb-0.5">3rd Place</p>}
                   <BracketSlotCard slot={slotData[id] ?? emptySlot(id)} viewer={viewerExtras?.[id]} />
                 </div>
               ))}
@@ -260,8 +260,8 @@ export function BracketLayout({ bracketState, viewerExtras }: Props) {
                   className="absolute w-[46%]"
                   style={{ top: rightY[id], right: 0 }}
                 >
-                  {id === 'FINAL' && <p className="text-[10px] font-semibold text-gray-400 uppercase mb-0.5">Final</p>}
-                  {id === 'TP' && <p className="text-[10px] font-semibold text-gray-400 uppercase mb-0.5">3rd Place</p>}
+                  {id === 'FINAL' && <p className="text-[10px] font-semibold text-body-faint uppercase mb-0.5">Final</p>}
+                  {id === 'TP' && <p className="text-[10px] font-semibold text-body-faint uppercase mb-0.5">3rd Place</p>}
                   <BracketSlotCard slot={slotData[id] ?? emptySlot(id)} viewer={viewerExtras?.[id]} />
                 </div>
               ))}
@@ -270,7 +270,7 @@ export function BracketLayout({ bracketState, viewerExtras }: Props) {
               {connectors.length > 0 && (
                 <svg className="absolute inset-0 w-full h-full pointer-events-none">
                   {connectors.map((c, i) => (
-                    <g key={i} stroke="#d1d5db" strokeWidth="1.5" fill="none">
+                    <g key={i} stroke="var(--th-connector)" strokeWidth="1.5" fill="none">
                       <line x1="46%" y1={c.topCY} x2="50%" y2={c.topCY} />
                       <line x1="46%" y1={c.botCY} x2="50%" y2={c.botCY} />
                       <line x1="50%" y1={c.topCY} x2="50%" y2={c.botCY} />

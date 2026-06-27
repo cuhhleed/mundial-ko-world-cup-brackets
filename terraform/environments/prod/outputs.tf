@@ -73,6 +73,56 @@ output "redis_port" {
   value       = module.storage.redis_port
 }
 
+output "ecr_repository_url" {
+  description = "URL of the ECR repository for the API image"
+  value       = module.compute.ecr_repository_url
+}
+
+output "ecs_cluster_name" {
+  description = "Name of the ECS cluster"
+  value       = module.compute.ecs_cluster_name
+}
+
+output "ecs_service_name" {
+  description = "Name of the ECS service"
+  value       = module.compute.ecs_service_name
+}
+
+output "alb_dns_name" {
+  description = "DNS name of the Application Load Balancer"
+  value       = module.compute.alb_dns_name
+}
+
+output "api_url" {
+  description = "Public HTTPS URL for the API"
+  value       = module.compute.api_url
+}
+
+output "ecs_task_definition_family" {
+  description = "Family name of the ECS task definition"
+  value       = module.compute.task_definition_family
+}
+
+output "acm_certificate_arn" {
+  description = "ARN of the ACM wildcard certificate"
+  value       = module.compute.acm_certificate_arn
+}
+
+output "cloudwatch_log_group_name" {
+  description = "Name of the CloudWatch log group for ECS tasks"
+  value       = module.compute.cloudwatch_log_group_name
+}
+
+output "ingestion_task_definition_family" {
+  description = "Family name of the ingestion ECS task definition"
+  value       = module.compute.ingestion_task_definition_family
+}
+
+output "ingestion_service_name" {
+  description = "Name of the ingestion ECS service"
+  value       = module.compute.ingestion_service_name
+}
+
 output "s3_bucket_name" {
   description = "Name of the S3 bucket serving frontend assets"
   value       = module.frontend.s3_bucket_name

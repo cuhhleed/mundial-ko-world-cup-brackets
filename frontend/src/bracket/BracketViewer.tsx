@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { api, ApiError } from '@/api/client'
 import { BracketLayout } from './BracketLayout'
+import { BracketLegend } from './BracketLegend'
 import type { ApiBracketResponse, ApiSlotDetail, ApiSlotPrediction, BracketState, SlotState } from './types'
 
 function predToSlotState(slotId: string, pred: ApiSlotPrediction, locked: boolean): SlotState {
@@ -91,7 +92,7 @@ export function BracketViewer() {
 
   if (error) {
     return (
-      <div className="py-12 text-center text-gray-500">
+      <div className="py-12 text-center text-body-muted">
         <p>{error}</p>
       </div>
     )
@@ -100,7 +101,7 @@ export function BracketViewer() {
   if (!data) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-edge border-t-blue-500 rounded-full animate-spin" />
       </div>
     )
   }
@@ -113,26 +114,28 @@ export function BracketViewer() {
   return (
     <div className="space-y-6">
       {/* Summary header */}
-      <div className="flex flex-wrap gap-4 rounded-xl border border-gray-200 bg-white px-6 py-4 shadow-sm">
+      <div className="flex flex-wrap gap-4 rounded-xl border border-edge bg-surface px-6 py-4 shadow-sm">
         <div className="flex flex-col">
-          <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+          <span className="text-xs font-semibold uppercase tracking-wider text-body-faint">
             Total Points
           </span>
           <span className="text-2xl font-bold text-blue-700">
             {totalPoints ?? '--'}
           </span>
         </div>
-        <div className="w-px bg-gray-200 self-stretch" />
+        <div className="w-px bg-edge self-stretch" />
         <div className="flex flex-col">
-          <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+          <span className="text-xs font-semibold uppercase tracking-wider text-body-faint">
             Correct Predictions
           </span>
           <span className="text-2xl font-bold text-green-700">
             {correct}
-            <span className="text-sm font-normal text-gray-400"> / {completed} played</span>
+            <span className="text-sm font-normal text-body-faint"> / {completed} played</span>
           </span>
         </div>
       </div>
+
+      <BracketLegend />
 
       {/* Bracket */}
       <BracketLayout bracketState={bracketState} viewerExtras={viewerExtras} />

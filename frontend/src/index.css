@@ -1,5 +1,74 @@
 @import "tailwindcss";
 
+:root {
+  --th-page: #f9fafb;
+  --th-surface: #ffffff;
+  --th-surface-alt: #f3f4f6;
+  --th-surface-hover: #e5e7eb;
+  --th-nav: #eff6ff;
+  --th-body: #111827;
+  --th-body-secondary: #374151;
+  --th-body-muted: #6b7280;
+  --th-body-faint: #9ca3af;
+  --th-body-disabled: #d1d5db;
+  --th-edge: #e5e7eb;
+  --th-edge-light: #f3f4f6;
+  --th-connector: #e5e7eb;
+  --th-win: #16a34a;
+  --th-loss: #dc2626;
+}
+
+.dark {
+  --th-page: #111827;
+  --th-surface: #1e293b;
+  --th-surface-alt: #374151;
+  --th-surface-hover: #4b5563;
+  --th-nav: #1e293b;
+  --th-body: #f3f4f6;
+  --th-body-secondary: #d1d5db;
+  --th-body-muted: #9ca3af;
+  --th-body-faint: #6b7280;
+  --th-body-disabled: #4b5563;
+  --th-edge: #374151;
+  --th-edge-light: #1f2937;
+  --th-connector: #4b5563;
+  --th-win: #4ade80;
+  --th-loss: #f87171;
+}
+
+@theme {
+  --font-sans: "Nunito Sans", sans-serif;
+  --font-display: "Teko", sans-serif;
+  --color-page: var(--th-page);
+  --color-surface: var(--th-surface);
+  --color-surface-alt: var(--th-surface-alt);
+  --color-surface-hover: var(--th-surface-hover);
+  --color-nav: var(--th-nav);
+  --color-body: var(--th-body);
+  --color-body-secondary: var(--th-body-secondary);
+  --color-body-muted: var(--th-body-muted);
+  --color-body-faint: var(--th-body-faint);
+  --color-body-disabled: var(--th-body-disabled);
+  --color-edge: var(--th-edge);
+  --color-edge-light: var(--th-edge-light);
+  --color-connector: var(--th-connector);
+  --color-win: var(--th-win);
+  --color-loss: var(--th-loss);
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--th-body);
+  background-color: var(--th-page);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+@variant hover (&:hover);
+
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }

@@ -1,8 +1,11 @@
 import { TeamFlag } from '../components/TeamFlag'
+import { TeamRecordStack } from './TeamRecordStack'
+import type { TeamRecord } from './useTeamRecords'
 
 type Props = {
   slotId: string
   teams: [string, string] | null
+  records: Record<string, TeamRecord> | null
   scores: [number, number] | null
   pkScores: [number, number] | null
   winner: string | null
@@ -70,7 +73,7 @@ function ScoreInput({
       {side === 'left' ? decBtn : incBtn}
       <div
         className="w-14 h-14 flex items-center justify-center text-2xl font-bold
-                   border-2 border-gray-300 rounded-xl bg-white select-none"
+                   border-2 border-edge rounded-xl bg-surface select-none"
       >
         {value ?? '—'}
       </div>
@@ -82,6 +85,7 @@ function ScoreInput({
 export function WizardScorePrompt({
   slotId,
   teams,
+  records,
   scores,
   pkScores,
   winner,
@@ -91,7 +95,7 @@ export function WizardScorePrompt({
 }: Props) {
   if (!teams) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-16 text-gray-400">
+      <div className="flex flex-col items-center justify-center gap-4 py-16 text-body-faint">
         <span className="text-4xl">⏳</span>
         <p className="text-lg">{slotLabel(slotId)}</p>
         <p className="text-sm">Waiting for upstream picks…</p>
@@ -104,22 +108,41 @@ export function WizardScorePrompt({
 
   return (
     <div className="flex flex-col items-center gap-8 py-8">
-      <h2 className="text-base font-medium text-gray-500 tracking-wide uppercase">
+      <h2 className="text-base font-medium text-body-muted tracking-wide uppercase">
         {slotLabel(slotId)}
       </h2>
-      <p className="text-xl font-semibold text-gray-700">Enter the score (90 min)</p>
+      <p className="text-xl font-semibold text-body-secondary text-center">
+        {slotId === 'FINAL'
+          ? 'Who is the 2026 World Cup Champion?'
+          : 'Enter the score (90 min + extra time)'}
+      </p>
 
       {/* Teams */}
-      <div className="flex items-center gap-2 sm:gap-4">
-        <div className="flex flex-col items-center gap-2 sm:gap-3 px-4 sm:px-8 py-4 sm:py-5 rounded-2xl border-2 border-gray-200 bg-white w-32 sm:w-44">
-          <TeamFlag code={teams[0]} className="w-10 h-10 sm:w-16 sm:h-16" />
-          <span className="text-sm sm:text-lg font-bold text-gray-800 text-center leading-tight">{teams[0]}</span>
+      <div className="flex flex-col items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-4">
+          {records?.[teams[0]] && <div className="hidden sm:block"><TeamRecordStack {...records[teams[0]]} /></div>}
+          <div className="flex flex-col items-center gap-2 sm:gap-3 px-4 sm:px-8 py-4 sm:py-5 rounded-2xl border-2 border-edge bg-surface w-32 sm:w-44">
+            <TeamFlag code={teams[0]} className="w-10 h-10 sm:w-16 sm:h-16" />
+            <span className="text-sm sm:text-lg font-bold text-body text-center leading-tight">{teams[0]}</span>
+          </div>
+          <span className="text-sm font-bold text-body-faint tracking-wider">VS</span>
+          <div className="flex flex-col items-center gap-2 sm:gap-3 px-4 sm:px-8 py-4 sm:py-5 rounded-2xl border-2 border-edge bg-surface w-32 sm:w-44">
+            <TeamFlag code={teams[1]} className="w-10 h-10 sm:w-16 sm:h-16" />
+            <span className="text-sm sm:text-lg font-bold text-body text-center leading-tight">{teams[1]}</span>
+          </div>
+          {records?.[teams[1]] && <div className="hidden sm:block"><TeamRecordStack {...records[teams[1]]} /></div>}
         </div>
-        <span className="text-sm font-bold text-gray-400 tracking-wider">VS</span>
-        <div className="flex flex-col items-center gap-2 sm:gap-3 px-4 sm:px-8 py-4 sm:py-5 rounded-2xl border-2 border-gray-200 bg-white w-32 sm:w-44">
-          <TeamFlag code={teams[1]} className="w-10 h-10 sm:w-16 sm:h-16" />
-          <span className="text-sm sm:text-lg font-bold text-gray-800 text-center leading-tight">{teams[1]}</span>
-        </div>
+        {records && (records[teams[0]] || records[teams[1]]) && (
+          <div className="flex items-center gap-2 sm:hidden">
+            <div className="w-32 flex justify-center">
+              {records[teams[0]] && <TeamRecordStack {...records[teams[0]]} />}
+            </div>
+            <span className="text-sm font-bold tracking-wider invisible">VS</span>
+            <div className="w-32 flex justify-center">
+              {records[teams[1]] && <TeamRecordStack {...records[teams[1]]} />}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Score row */}
@@ -129,7 +152,7 @@ export function WizardScorePrompt({
           onChange={(v) => onScoresChange([v, scores?.[1] ?? 0])}
           side="left"
         />
-        <span className="text-xl font-bold text-gray-400">–</span>
+        <span className="text-xl font-bold text-body-faint">–</span>
         <ScoreInput
           value={scores?.[1] ?? null}
           onChange={(v) => onScoresChange([scores?.[0] ?? 0, v])}
@@ -147,7 +170,7 @@ export function WizardScorePrompt({
               onChange={(v) => onPkChange([v, pkScores?.[1] ?? 0])}
               side="left"
             />
-            <span className="text-xl font-bold text-gray-400">–</span>
+            <span className="text-xl font-bold text-body-faint">–</span>
             <ScoreInput
               value={pkScores?.[1] ?? null}
               onChange={(v) => onPkChange([pkScores?.[0] ?? 0, v])}
@@ -163,7 +186,7 @@ export function WizardScorePrompt({
       {/* Winner indicator */}
       {winner && (
         <p className="text-sm text-green-700 font-medium">
-          ✓ <span className="font-bold">{winner}</span> advances
+          ✓ <span className="font-bold">{winner}</span> {slotId === 'FINAL' ? 'wins!' : 'advances'}
         </p>
       )}
 
@@ -173,7 +196,7 @@ export function WizardScorePrompt({
         disabled={!canConfirm}
         className="px-8 py-3 rounded-xl font-semibold text-white bg-blue-600
                    hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed
-                   transition-colors"
+                   transition-colors self-center"
       >
         Next
       </button>
