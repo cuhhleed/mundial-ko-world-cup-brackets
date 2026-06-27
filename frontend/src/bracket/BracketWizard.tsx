@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { ROUNDS, SCORE_BEARING_SLOTS, WIZARD_SLOT_ORDER } from './topology'
 import type { BracketAction, BracketState } from './types'
+import { useTeamRecords } from './useTeamRecords'
 import { WizardProgressBar } from './WizardProgressBar'
 import { WizardPrompt } from './WizardPrompt'
 import { WizardScorePrompt } from './WizardScorePrompt'
@@ -20,6 +21,7 @@ export function BracketWizard({
   onStepChange,
   onStartOver,
 }: Props) {
+  const records = useTeamRecords()
   const slotId = WIZARD_SLOT_ORDER[currentStep]
   const slot = bracketState.slots[slotId]
   const isScoreBearing = SCORE_BEARING_SLOTS.has(slotId)
@@ -77,6 +79,7 @@ export function BracketWizard({
           <WizardScorePrompt
             slotId={slotId}
             teams={slot?.teams ?? null}
+            records={records}
             scores={slot?.scores ?? null}
             pkScores={slot?.pkScores ?? null}
             winner={slot?.winner ?? null}
@@ -88,18 +91,19 @@ export function BracketWizard({
           <WizardPrompt
             slotId={slotId}
             teams={slot?.teams ?? null}
+            records={records}
             onSelect={handleSelectWinner}
           />
         )}
       </div>
 
-      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+      <div className="flex justify-between items-center pt-2 border-t border-edge-light">
         <button
           type="button"
           onClick={handleBack}
           disabled={currentStep === 0}
-          className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100
-                     disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700
+                     disabled:opacity-30 disabled:cursor-not-allowed transition-colors self-center"
         >
           ← Back
         </button>
@@ -107,7 +111,7 @@ export function BracketWizard({
         <button
           type="button"
           onClick={onStartOver}
-          className="px-4 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 transition-colors"
+          className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-700 transition-colors self-center"
         >
           Start over
         </button>

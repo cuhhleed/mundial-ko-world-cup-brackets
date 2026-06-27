@@ -3,7 +3,9 @@
 from unittest.mock import MagicMock
 
 import httpx
+import pytest
 
+import app.espn.adapter as espn_adapter_module
 import app.espn.client as espn_client_module
 from app.espn.adapter import (
     _map_status,
@@ -12,6 +14,13 @@ from app.espn.adapter import (
     espn_events_to_matches,
 )
 from app.espn.client import fetch_live_scores, fetch_scoreboard
+
+
+@pytest.fixture(autouse=True)
+def _clear_runtime_event_map():
+    espn_adapter_module._runtime_event_map.clear()
+    yield
+    espn_adapter_module._runtime_event_map.clear()
 
 # ---------------------------------------------------------------------------
 # Factory fixture

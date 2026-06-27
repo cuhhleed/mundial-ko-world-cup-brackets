@@ -10,6 +10,10 @@ _cloudwatch = boto3.client("cloudwatch", region_name=settings.AWS_REGION)
 
 def emit_heartbeat() -> None:
     """Publish a single IngestionHeartbeat metric data point to CloudWatch."""
+    if settings.ENVIRONMENT == "local":
+        logger.info("heartbeat_skipped_local")
+        return
+
     _cloudwatch.put_metric_data(
         Namespace=settings.CLOUDWATCH_NAMESPACE,
         MetricData=[

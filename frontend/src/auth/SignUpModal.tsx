@@ -70,12 +70,12 @@ export function SignUpModal({ isOpen, predictions, onClose, onAuthenticated }: P
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="relative bg-white rounded-lg shadow-xl p-8 w-full max-w-md mx-4">
+      <div className="relative bg-surface rounded-lg shadow-xl p-8 w-full max-w-md mx-4">
 
         {step === 'confirm' && (
           <>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Submit Bracket</h2>
-            <p className="text-gray-700 mb-6">
+            <h2 className="text-xl font-bold text-body mb-4">Submit Bracket</h2>
+            <p className="text-body-secondary mb-6">
               Your bracket is final and cannot be edited after submission.
             </p>
             <div className="flex gap-3">
@@ -89,7 +89,7 @@ export function SignUpModal({ isOpen, predictions, onClose, onAuthenticated }: P
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 border border-gray-300 text-gray-700 rounded-md py-2 font-medium hover:bg-gray-50"
+                className="flex-1 border border-edge text-body-secondary rounded-md py-2 font-medium hover:bg-surface-alt"
               >
                 Cancel
               </button>
@@ -99,14 +99,14 @@ export function SignUpModal({ isOpen, predictions, onClose, onAuthenticated }: P
 
         {step === 'google' && (
           <>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Sign In to Submit</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-xl font-bold text-body mb-4">Sign In to Submit</h2>
+            <p className="text-body-muted mb-6">
               Sign in with Google to save your bracket.
             </p>
             <div className="flex justify-center">
               {isSubmitting ? (
-                <div className="flex items-center gap-2 text-gray-500 text-sm">
-                  <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                <div className="flex items-center gap-2 text-body-muted text-sm">
+                  <div className="w-4 h-4 border-2 border-edge border-t-blue-500 rounded-full animate-spin" />
                   Submitting…
                 </div>
               ) : (

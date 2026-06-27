@@ -24,6 +24,10 @@ _STATUS_MAP = {
 
 _PLACEHOLDER_RE = re.compile(r"^([12])([A-P])$")
 
+# Accumulated at runtime during schedule loading so the poller resolves
+# the same slot IDs without needing a static JSON map.
+_runtime_event_map: dict[str, str] = {}
+
 
 def _normalize_team_code(espn_code: str) -> str:
     """Swap placeholder codes like '1A' → 'A1'. FIFA codes like 'ARG' pass through."""
@@ -161,9 +165,12 @@ def espn_event_to_match(event: dict, slot_id: str) -> Match:
 def espn_events_to_matches(events: list[dict]) -> dict[str, Match]:
     """
     Batch-convert ESPN events to a slot_id → Match dict.
-    Uses static event map for known IDs, heuristic slot assignment otherwise.
+    Uses static event map and runtime map for known IDs, heuristic slot
+    assignment otherwise.  Newly assigned slot IDs are recorded in the
+    runtime map so subsequent calls (e.g. poller after schedule load)
+    resolve the same IDs.
     """
-    event_map = _load_event_map()
+    event_map = {**_load_event_map(), **_runtime_event_map}
     result: dict[str, Match] = {}
     unmapped: list[dict] = []
 
@@ -177,6 +184,9 @@ def espn_events_to_matches(events: list[dict]) -> dict[str, Match]:
 
     if unmapped:
         for event, slot_id in _assign_slots_by_stage(unmapped):
+            event_id = str(event.get("id", ""))
+            if event_id:
+                _runtime_event_map[event_id] = slot_id
             result[slot_id] = espn_event_to_match(event, slot_id)
 
     return result

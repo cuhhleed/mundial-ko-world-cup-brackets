@@ -36,7 +36,7 @@ function TeamRow({
     <div
       className={[
         "flex items-center justify-between px-2 py-1 rounded text-xs",
-        isWinner ? "bg-blue-50 font-bold text-blue-900" : "text-gray-600",
+        isWinner ? "bg-surface-alt font-bold text-body" : "text-body-muted",
       ].join(" ")}
     >
       <span className="flex items-center gap-1 truncate max-w-24">
@@ -44,7 +44,7 @@ function TeamRow({
         <span className="truncate">{name}</span>
       </span>
       {score !== null && (
-        <span className={isWinner ? "text-blue-700" : "text-gray-400"}>
+        <span className={isWinner ? "text-blue-700" : "text-body-faint"}>
           {score}
         </span>
       )}
@@ -75,8 +75,8 @@ export function BracketSlotCard({ slot, viewer }: Props) {
   return (
     <div
       className={[
-        "w-full rounded-lg border bg-white shadow-sm text-[11px] overflow-hidden",
-        locked ? "border-amber-300 bg-amber-50/50" : "border-gray-200",
+        "w-full rounded-lg border bg-surface shadow-sm text-[11px] overflow-hidden",
+        locked ? "border-amber-300 bg-amber-50/50" : "border-edge",
         showAccuracyBanner && winnerCorrect ? "border-green-400" : "",
         showAccuracyBanner && !winnerCorrect ? "border-red-300" : "",
       ]
@@ -136,7 +136,7 @@ export function BracketSlotCard({ slot, viewer }: Props) {
             )}
           </div>
         )}
-        <div className="flex-1 flex flex-col divide-y divide-gray-100">
+        <div className="flex-1 flex flex-col divide-y divide-edge-light">
           <TeamRow
             name={team1}
             score={scores?.[0] ?? null}
