@@ -183,6 +183,15 @@ export function Home() {
         Here's a quick guide on bracket indicators:
       </p>
       <BracketLegend collapsible={false} />
+      <h2 className="text-3xl">Late Arrival? No Problem.</h2>
+      <p className="text-body-secondary">
+        You can still submit a bracket even after the knockout games begin.
+        While you won't get any points from games already played by the time of
+        your submission, late players get the advantage of more insight into the
+        later, more lucrative rounds. If you play your cards right, our point
+        system allows you to potentially catch up on the leaderboard and make a
+        dramatic underdog run!
+      </p>
       <h2 className="text-3xl">General Tips</h2>
       <ul className="text-body-secondary list-disc list-outside space-y-3 ml-6">
         <li>
