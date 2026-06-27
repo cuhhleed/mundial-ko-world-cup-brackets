@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ROUNDS, SCORE_BEARING_SLOTS, WIZARD_SLOT_ORDER } from './topology'
 import type { BracketAction, BracketState } from './types'
 import { useTeamRecords } from './useTeamRecords'
@@ -25,6 +25,8 @@ export function BracketWizard({
   const slotId = WIZARD_SLOT_ORDER[currentStep]
   const slot = bracketState.slots[slotId]
   const isScoreBearing = SCORE_BEARING_SLOTS.has(slotId)
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
+  const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function handleRoundClick(roundId: string) {
     // Find the first step index for this round
@@ -38,13 +40,17 @@ export function BracketWizard({
   }
 
   function handleSelectWinner(winner: string) {
-    // Skip locked slots automatically
+    if (selectedTeam) return
     if (slot?.locked) {
       onStepChange(currentStep + 1)
       return
     }
     dispatch({ type: 'SELECT_WINNER', slotId, winner })
-    onStepChange(currentStep + 1)
+    setSelectedTeam(winner)
+    transitionTimer.current = setTimeout(() => {
+      setSelectedTeam(null)
+      onStepChange(currentStep + 1)
+    }, 500)
   }
 
   function handleScoreConfirm() {
@@ -60,6 +66,12 @@ export function BracketWizard({
     }
     onStepChange(currentStep - 1)
   }
+
+  useEffect(() => {
+    return () => {
+      if (transitionTimer.current) clearTimeout(transitionTimer.current)
+    }
+  }, [])
 
   // Auto-skip locked slots without calling setState during render
   useEffect(() => {
@@ -93,6 +105,7 @@ export function BracketWizard({
             teams={slot?.teams ?? null}
             records={records}
             onSelect={handleSelectWinner}
+            selectedTeam={selectedTeam}
           />
         )}
       </div>
