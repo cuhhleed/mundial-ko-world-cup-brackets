@@ -70,6 +70,24 @@ aws ecs update-service \
   --region "$REGION" \
   >/dev/null
 
+INGESTION_TASK_DEF="$(tf_output ingestion_task_definition_family)"
+INGESTION_SERVICE="$(tf_output ingestion_service_name)"
+INGESTION_LATEST_REVISION="$(aws ecs describe-task-definition \
+  --task-definition "$INGESTION_TASK_DEF" \
+  --region "$REGION" \
+  --query 'taskDefinition.taskDefinitionArn' \
+  --output text)"
+
+echo "==> Triggering ECS force-new-deployment (cluster=$CLUSTER, service=$INGESTION_SERVICE)"
+echo "    Task definition: $INGESTION_LATEST_REVISION"
+aws ecs update-service \
+  --cluster "$CLUSTER" \
+  --service "$INGESTION_SERVICE" \
+  --task-definition "$INGESTION_LATEST_REVISION" \
+  --force-new-deployment \
+  --region "$REGION" \
+  >/dev/null
+
 API_URL="$(tf_output api_url)"
 
 echo ""
@@ -79,4 +97,4 @@ echo "                  $TAG_SHA"
 echo "    API URL     : $API_URL"
 echo ""
 echo "    TIP: to block until the rollout settles, run:"
-echo "      aws ecs wait services-stable --cluster $CLUSTER --services $SERVICE --region $REGION"
+echo "      aws ecs wait services-stable --cluster $CLUSTER --services $SERVICE $INGESTION_SERVICE --region $REGION"

@@ -113,6 +113,16 @@ output "cloudwatch_log_group_name" {
   value       = module.compute.cloudwatch_log_group_name
 }
 
+output "ingestion_task_definition_family" {
+  description = "Family name of the ingestion ECS task definition"
+  value       = module.compute.ingestion_task_definition_family
+}
+
+output "ingestion_service_name" {
+  description = "Name of the ingestion ECS service"
+  value       = module.compute.ingestion_service_name
+}
+
 output "s3_bucket_name" {
   description = "Name of the S3 bucket serving frontend assets"
   value       = module.frontend.s3_bucket_name

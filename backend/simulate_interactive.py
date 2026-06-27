@@ -9,7 +9,8 @@ Already-completed matches are shown but skipped. Later-round matchups
 are derived from winners of earlier rounds.
 
 Usage:
-    python simulate_interactive.py
+    python simulate_interactive.py          # targets local DynamoDB
+    python simulate_interactive.py dev      # targets dev DynamoDB in AWS
 """
 
 import asyncio
@@ -19,19 +20,29 @@ from datetime import datetime, timezone
 
 import boto3
 
-os.environ.setdefault("DYNAMODB_ENDPOINT_URL", "http://localhost:8001")
+USE_DEV = len(sys.argv) > 1 and sys.argv[1] == "dev"
+
+if USE_DEV:
+    ENVIRONMENT = "dev"
+    os.environ["ENVIRONMENT"] = ENVIRONMENT
+    os.environ.pop("DYNAMODB_ENDPOINT_URL", None)
+    os.environ["USERS_TABLE"] = "mundial-ko-dev-users"
+    os.environ["BRACKETS_TABLE"] = "mundial-ko-dev-brackets"
+    os.environ["MATCHES_TABLE"] = "mundial-ko-dev-matches"
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+else:
+    os.environ.setdefault("DYNAMODB_ENDPOINT_URL", "http://localhost:8001")
+    ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
+    dynamodb = boto3.resource(
+        "dynamodb",
+        endpoint_url=os.getenv("DYNAMODB_ENDPOINT_URL", "http://localhost:8001"),
+        region_name="localhost",
+        aws_access_key_id="DUMMYIDEXAMPLE",
+        aws_secret_access_key="DUMMYSECRETANDKEYEXAMPLE",
+    )
 
 PROJECT_NAME = os.getenv("PROJECT_NAME", "mundial-ko")
-ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
 TABLE_NAME = f"{PROJECT_NAME}-{ENVIRONMENT}-matches"
-
-dynamodb = boto3.resource(
-    "dynamodb",
-    endpoint_url=os.getenv("DYNAMODB_ENDPOINT_URL", "http://localhost:8001"),
-    region_name="localhost",
-    aws_access_key_id="DUMMYIDEXAMPLE",
-    aws_secret_access_key="DUMMYSECRETANDKEYEXAMPLE",
-)
 table = dynamodb.Table(TABLE_NAME)
 
 ALL_SLOTS = (
@@ -258,6 +269,9 @@ async def _run_scoring():
 
 
 def trigger_scoring():
+    if USE_DEV:
+        print("  (skipping scoring — Redis not reachable outside VPC)")
+        return
     result = asyncio.run(_run_scoring())
     scored = result["scored"]
     updated = len(result["updates"])
