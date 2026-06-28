@@ -28,7 +28,7 @@ export function Home() {
             </svg>
           </div>
           <p className="text-body-secondary">
-            Create a bracket with your predictions for the Knockout Rounds.
+            <Link to="/bracket" className="text-blue-600 hover:underline">Create a bracket</Link>{" "}with your predictions for the Knockout Rounds.
           </p>
         </div>
         <div className="flex items-center gap-4">
