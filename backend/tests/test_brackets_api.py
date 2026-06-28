@@ -422,3 +422,44 @@ class TestBracketTemplate:
     def test_template_unauthenticated_returns_200(self, client: TestClient):
         resp = client.get("/api/brackets/template")
         assert resp.status_code == 200
+
+    def test_template_r16_with_placeholder_match_returns_null_teams(self, client: TestClient):
+        _seed_match("R16-1", "R16", "RD32", "RD32", status="scheduled")
+
+        resp = client.get("/api/brackets/template")
+        assert resp.status_code == 200
+        slots = resp.json()["slots"]
+
+        assert slots["R16-1"]["teams"] is None
+        assert slots["R16-1"]["status"] == "open"
+
+    def test_template_r16_derives_teams_from_locked_feeders(self, client: TestClient):
+        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
+        _seed_match("R32-2", "R32", "T03", "T04", home_score=1, away_score=0, status="completed")
+        _seed_match("R16-1", "R16", "RD32", "RD32", status="scheduled")
+
+        resp = client.get("/api/brackets/template")
+        assert resp.status_code == 200
+        slots = resp.json()["slots"]
+
+        assert slots["R16-1"]["teams"] == ["T01", "T03"]
+
+    def test_template_r16_null_when_one_feeder_locked(self, client: TestClient):
+        _seed_match("R32-1", "R32", "T01", "T02", home_score=2, away_score=0, status="completed")
+        _seed_match("R32-2", "R32", "T03", "T04", status="scheduled")
+        _seed_match("R16-1", "R16", "RD32", "RD32", status="scheduled")
+
+        resp = client.get("/api/brackets/template")
+        assert resp.status_code == 200
+        slots = resp.json()["slots"]
+
+        assert slots["R16-1"]["teams"] is None
+
+    def test_template_r32_scheduled_still_shows_teams(self, client: TestClient):
+        _seed_match("R32-5", "R32", "T09", "T10", status="scheduled")
+
+        resp = client.get("/api/brackets/template")
+        assert resp.status_code == 200
+        slots = resp.json()["slots"]
+
+        assert slots["R32-5"]["teams"] == ["T09", "T10"]
