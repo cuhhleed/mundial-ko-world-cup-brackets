@@ -1,27 +1,27 @@
-import { useState, useEffect } from 'react'
-import { api, ApiError } from '@/api/client'
-import { useAuth } from '@/auth/AuthContext'
+import { useState, useEffect } from "react";
+import { api, ApiError } from "@/api/client";
+import { useAuth } from "@/auth/AuthContext";
 
 type LeaderboardEntry = {
-  rank: number
-  display_name: string
-  total_points: number
-}
+  rank: number;
+  display_name: string;
+  total_points: number;
+};
 
 type LeaderboardResponse = {
-  entries: LeaderboardEntry[]
-  total_participants: number
-}
+  entries: LeaderboardEntry[];
+  total_participants: number;
+};
 
 type MyRankResponse = {
-  rank: number
-  total_points: number
-  total_participants: number
-}
+  rank: number;
+  total_points: number;
+  total_participants: number;
+};
 
 type YourRankBannerProps = {
-  myRank: MyRankResponse
-}
+  myRank: MyRankResponse;
+};
 
 function YourRankBanner({ myRank }: YourRankBannerProps) {
   return (
@@ -37,46 +37,61 @@ function YourRankBanner({ myRank }: YourRankBannerProps) {
         <span className="text-xs font-semibold uppercase tracking-wider text-blue-400">
           Your Points
         </span>
-        <span className="text-2xl font-bold text-blue-700">{myRank.total_points}</span>
+        <span className="text-2xl font-bold text-blue-700">
+          {myRank.total_points}
+        </span>
       </div>
       <div className="hidden sm:block w-px bg-blue-200 self-stretch" />
       <div className="flex flex-col">
         <span className="text-xs font-semibold uppercase tracking-wider text-blue-400">
           Total Players
         </span>
-        <span className="text-2xl font-bold text-blue-700">{myRank.total_participants}</span>
+        <span className="text-2xl font-bold text-blue-700">
+          {myRank.total_participants}
+        </span>
       </div>
     </div>
-  )
+  );
 }
 
 type LeaderboardRowProps = {
-  entry: LeaderboardEntry
-  isCurrentUser: boolean
-  index: number
-  isTopThree: boolean
-}
+  entry: LeaderboardEntry;
+  isCurrentUser: boolean;
+  index: number;
+  isTopThree: boolean;
+};
 
-const MEDALS: Record<number, string> = { 1: '\u{1F947}', 2: '\u{1F948}', 3: '\u{1F949}' }
+const MEDALS: Record<number, string> = {
+  1: "\u{1F947}",
+  2: "\u{1F948}",
+  3: "\u{1F949}",
+};
 
-function LeaderboardRow({ entry, isCurrentUser, index, isTopThree }: LeaderboardRowProps) {
-  const medal = MEDALS[entry.rank]
-  const altBg = index % 2 === 0 ? 'bg-surface' : 'bg-surface-alt'
+function LeaderboardRow({
+  entry,
+  isCurrentUser,
+  index,
+  isTopThree,
+}: LeaderboardRowProps) {
+  const medal = MEDALS[entry.rank];
+  const altBg = index % 2 === 0 ? "bg-surface" : "bg-surface-alt";
 
-  let rowBg: string
-  let leftAccent: string
+  let rowBg: string;
+  let leftAccent: string;
   if (isCurrentUser) {
-    rowBg = altBg
-    leftAccent = 'border-l-4 border-l-amber-500'
+    rowBg = altBg;
+    leftAccent = "border-l-4 border-l-amber-500";
   } else {
-    rowBg = altBg
-    leftAccent = ''
+    rowBg = altBg;
+    leftAccent = "";
   }
 
-  const rankSize = isTopThree ? 'text-base' : 'text-sm'
-  const nameSize = isTopThree ? 'text-base' : 'text-sm'
-  const pointsSize = isTopThree ? 'text-base font-bold' : 'text-sm font-semibold'
-  const rowPadding = isTopThree ? 'px-4 py-4' : 'px-4 py-3'
+  const rankSize = isTopThree ? "text-base" : "text-sm";
+  const nameSize = isTopThree ? "text-base" : "text-sm";
+  const pointsSize = isTopThree
+    ? "text-base font-bold"
+    : "text-sm font-semibold";
+  const rowPadding = isTopThree ? "px-4 py-4" : "px-4 py-3";
 
   return (
     <div
@@ -88,61 +103,69 @@ function LeaderboardRow({ entry, isCurrentUser, index, isTopThree }: Leaderboard
       <span className={`flex-1 ${nameSize} font-medium text-body`}>
         {entry.display_name}
         {isCurrentUser && (
-          <span className="ml-2 text-xs font-semibold text-amber-500">(you)</span>
+          <span className="ml-2 text-xs font-semibold text-amber-500">
+            (you)
+          </span>
         )}
       </span>
-      <span className={`${pointsSize} text-body-secondary`}>{entry.total_points}</span>
+      <span className={`${pointsSize} text-body-secondary`}>
+        {entry.total_points}
+      </span>
     </div>
-  )
+  );
 }
 
 export function Leaderboard() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuth();
 
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([])
-  const [totalParticipants, setTotalParticipants] = useState<number>(0)
-  const [myRank, setMyRank] = useState<MyRankResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [totalParticipants, setTotalParticipants] = useState<number>(0);
+  const [myRank, setMyRank] = useState<MyRankResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    setError(null)
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
 
-    const leaderboardReq = api.get<LeaderboardResponse>('/api/leaderboard?limit=50')
+    const leaderboardReq = api.get<LeaderboardResponse>(
+      "/api/leaderboard?limit=50",
+    );
     const myRankReq: Promise<MyRankResponse | null> = isAuthenticated
-      ? api.get<MyRankResponse>('/api/leaderboard/me').catch((err) => {
-          if (err instanceof ApiError && err.status === 404) return null
-          throw err
+      ? api.get<MyRankResponse>("/api/leaderboard/me").catch((err) => {
+          if (err instanceof ApiError && err.status === 404) return null;
+          throw err;
         })
-      : Promise.resolve(null)
+      : Promise.resolve(null);
 
     Promise.all([leaderboardReq, myRankReq])
       .then(([leaderboardData, myRankData]) => {
-        if (cancelled) return
-        setEntries(leaderboardData.entries)
-        setTotalParticipants(leaderboardData.total_participants)
-        setMyRank(myRankData)
+        if (cancelled) return;
+        setEntries(leaderboardData.entries);
+        setTotalParticipants(leaderboardData.total_participants);
+        setMyRank(myRankData);
       })
       .catch((err) => {
-        if (cancelled) return
-        setError(err instanceof Error ? err.message : 'Failed to load leaderboard.')
+        if (cancelled) return;
+        setError(
+          err instanceof Error ? err.message : "Failed to load leaderboard.",
+        );
       })
       .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
-      cancelled = true
-    }
-  }, [refreshKey, isAuthenticated])
+      cancelled = true;
+    };
+  }, [refreshKey, isAuthenticated]);
 
   const showBanner =
     isAuthenticated &&
     myRank != null &&
-    !entries.some((e) => e.rank === myRank.rank)
+    !entries.some((e) => e.rank === myRank.rank);
 
   // First-load spinner
   if (loading && entries.length === 0) {
@@ -150,7 +173,7 @@ export function Leaderboard() {
       <div className="flex items-center justify-center py-24">
         <div className="w-8 h-8 border-2 border-edge border-t-blue-500 rounded-full animate-spin" />
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -165,7 +188,7 @@ export function Leaderboard() {
           Try again
         </button>
       </div>
-    )
+    );
   }
 
   if (!loading && entries.length === 0) {
@@ -174,7 +197,7 @@ export function Leaderboard() {
         <h1 className="text-4xl font-bold">Leaderboard</h1>
         <p className="text-body-muted">No rankings yet.</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -183,8 +206,11 @@ export function Leaderboard() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold">Leaderboard</h1>
-          <p className="mt-1 text-sm text-body-muted">
-            {totalParticipants} {totalParticipants === 1 ? 'player' : 'players'}
+          <p className="mt-1 text-sm text-body-muted italic font-thin">
+            Leaderboard is updated after each game.
+          </p>
+          <p className="mt-1 text-sm text-body-secondary">
+            {totalParticipants} {totalParticipants === 1 ? "player" : "players"}
           </p>
         </div>
         <button
@@ -194,7 +220,7 @@ export function Leaderboard() {
           aria-label="Refresh leaderboard"
         >
           <svg
-            className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+            className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
@@ -239,5 +265,5 @@ export function Leaderboard() {
         ))}
       </div>
     </div>
-  )
+  );
 }
