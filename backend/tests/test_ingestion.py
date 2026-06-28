@@ -233,6 +233,7 @@ class TestPollCycleTransitionDetection:
             patch(
                 "app.ingestion.poller.rescore_all_brackets", return_value=canned_result
             ),
+            patch("app.ingestion.poller.clear_leaderboard", new_callable=AsyncMock),
             patch("app.ingestion.poller.update_leaderboard", new_callable=AsyncMock),
             patch("asyncio.to_thread", side_effect=_fake_to_thread),
         ):
@@ -288,6 +289,7 @@ class TestPollCycleTransitionDetection:
             patch(
                 "app.ingestion.poller.rescore_all_brackets", return_value=canned_result
             ),
+            patch("app.ingestion.poller.clear_leaderboard", new_callable=AsyncMock),
             patch("app.ingestion.poller.update_leaderboard", new_callable=AsyncMock),
             patch("asyncio.to_thread", side_effect=_fake_to_thread),
         ):
@@ -467,6 +469,7 @@ class TestTriggerScoring:
             patch(
                 "app.ingestion.poller.rescore_all_brackets", return_value=canned_result
             ),
+            patch("app.ingestion.poller.clear_leaderboard", new_callable=AsyncMock),
             patch("app.ingestion.poller.update_leaderboard", mock_update_leaderboard),
             patch("asyncio.to_thread", side_effect=_fake_to_thread),
         ):
@@ -507,6 +510,7 @@ class TestTriggerScoring:
             patch(
                 "app.ingestion.poller.rescore_all_brackets", return_value=canned_result
             ),
+            patch("app.ingestion.poller.clear_leaderboard", new_callable=AsyncMock),
             patch("app.ingestion.poller.update_leaderboard", mock_update_leaderboard),
             patch("asyncio.to_thread", side_effect=_fake_to_thread),
         ):

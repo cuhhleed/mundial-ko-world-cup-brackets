@@ -46,6 +46,11 @@ async def update_leaderboard(user_id: str, points: int) -> None:
     await client.zadd(_LEADERBOARD_KEY, {user_id: points})
 
 
+async def clear_leaderboard() -> None:
+    client = get_cache()
+    await client.delete(_LEADERBOARD_KEY)
+
+
 async def get_leaderboard_top(limit: int) -> list[tuple[str, float]]:
     client = get_cache()
     return await client.zrevrange(_LEADERBOARD_KEY, 0, limit - 1, withscores=True)

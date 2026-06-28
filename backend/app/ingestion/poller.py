@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timezone
 
 from app.config import settings
-from app.db.cache import set_match_state, update_leaderboard
+from app.db.cache import clear_leaderboard, set_match_state, update_leaderboard
 from app.espn.adapter import espn_events_to_matches
 from app.espn.client import fetch_scoreboard
 from app.ingestion.heartbeat import emit_heartbeat
@@ -142,6 +142,7 @@ class IngestionPoller:
 
         result = await asyncio.to_thread(rescore_all_brackets)
 
+        await clear_leaderboard()
         for _bracket_id, user_id, total_points in result["updates"]:
             await update_leaderboard(user_id, total_points)
 

@@ -256,12 +256,13 @@ def write_result(
 
 
 async def _run_scoring():
-    from app.db.cache import connect, disconnect, update_leaderboard
+    from app.db.cache import clear_leaderboard, connect, disconnect, update_leaderboard
     from app.services.brackets import rescore_all_brackets
 
     result = rescore_all_brackets()
     if result["updates"]:
         await connect()
+        await clear_leaderboard()
         for _, user_id, total_points in result["updates"]:
             await update_leaderboard(user_id, total_points)
         await disconnect()
