@@ -324,13 +324,291 @@ class TestLoadInitialSchedule:
         ):
             from app.ingestion.schedule_loader import load_initial_schedule
 
-            written = load_initial_schedule("20260628", "20260719")
+            written, updated = load_initial_schedule("20260628", "20260719")
 
         assert written == 14
+        assert updated == 0
         assert mock_put.call_count == 14
         # Confirm none of the existing IDs were written
         written_ids = {call.args[0].match_id for call in mock_put.call_args_list}
         assert written_ids.isdisjoint(existing_ids)
+
+    def test_updates_scheduled_matches_with_resolved_teams(self):
+        # Existing scheduled match with placeholder teams
+        existing_match = make_match(
+            match_id="R32-1", status="scheduled", home_team="L1", away_team="L2"
+        )
+        # Existing completed match — should not be touched
+        existing_completed = make_match(
+            match_id="R32-2",
+            status="completed",
+            home_team="OLD1",
+            away_team="OLD2",
+            home_score=1,
+            away_score=0,
+        )
+        existing_matches = {"R32-1": existing_match, "R32-2": existing_completed}
+
+        # ESPN returns resolved team codes for R32-1 and updated teams for R32-2
+        espn_r32_1 = make_match(
+            match_id="R32-1", status="scheduled", home_team="ARG", away_team="BRA"
+        )
+        espn_r32_2 = make_match(
+            match_id="R32-2",
+            status="completed",
+            home_team="NEW1",
+            away_team="NEW2",
+            home_score=1,
+            away_score=0,
+        )
+        espn_matches = {"R32-1": espn_r32_1, "R32-2": espn_r32_2}
+
+        with (
+            patch(
+                "app.ingestion.schedule_loader.get_match_schedule",
+                return_value=espn_matches,
+            ),
+            patch(
+                "app.ingestion.schedule_loader.get_all_matches",
+                return_value=existing_matches,
+            ),
+            patch("app.ingestion.schedule_loader.put_match") as mock_put,
+        ):
+            from app.ingestion.schedule_loader import load_initial_schedule
+
+            written, updated = load_initial_schedule("20260628", "20260719")
+
+        # Only the scheduled match with changed teams should be updated
+        assert written == 0
+        assert updated == 1
+        mock_put.assert_called_once_with(espn_r32_1)
+
+    def test_does_not_update_when_teams_unchanged(self):
+        existing_match = make_match(
+            match_id="R32-1", status="scheduled", home_team="ARG", away_team="BRA"
+        )
+        existing_matches = {"R32-1": existing_match}
+
+        espn_match = make_match(
+            match_id="R32-1", status="scheduled", home_team="ARG", away_team="BRA"
+        )
+        espn_matches = {"R32-1": espn_match}
+
+        with (
+            patch(
+                "app.ingestion.schedule_loader.get_match_schedule",
+                return_value=espn_matches,
+            ),
+            patch(
+                "app.ingestion.schedule_loader.get_all_matches",
+                return_value=existing_matches,
+            ),
+            patch("app.ingestion.schedule_loader.put_match") as mock_put,
+        ):
+            from app.ingestion.schedule_loader import load_initial_schedule
+
+            written, updated = load_initial_schedule("20260628", "20260719")
+
+        assert written == 0
+        assert updated == 0
+        mock_put.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# KO schedule refresh
+# ---------------------------------------------------------------------------
+
+
+class TestKOScheduleRefresh:
+    def _make_poller(self):
+        from app.ingestion.poller import IngestionPoller
+
+        return IngestionPoller()
+
+    def _base_patches(self):
+        """Return a dict of base patches common to all KO refresh tests."""
+        return {
+            "fetch_scoreboard": patch(
+                "app.ingestion.poller.fetch_scoreboard", return_value=[]
+            ),
+            "set_match_state": patch(
+                "app.ingestion.poller.set_match_state", new_callable=AsyncMock
+            ),
+            "emit_heartbeat": patch("app.ingestion.poller.emit_heartbeat"),
+            "to_thread": patch("asyncio.to_thread", side_effect=_fake_to_thread),
+        }
+
+    def test_grp_completion_sets_retry_counter(self):
+        poller = self._make_poller()
+        poller._match_states = {"GRP-1": "live"}
+
+        grp_match = Match(
+            match_id="GRP-1",
+            round="GRP",
+            match_number=1,
+            home_team="ARG",
+            away_team="BRA",
+            home_score=1,
+            away_score=0,
+            status="completed",
+            kickoff_time="2026-06-26T16:00:00Z",
+        )
+        canned_result = {"scored": 0, "failed": 0, "errors": [], "updates": []}
+
+        with (
+            patch("app.ingestion.poller.fetch_scoreboard", return_value=[]),
+            patch(
+                "app.ingestion.poller.espn_events_to_matches",
+                return_value={"GRP-1": grp_match},
+            ),
+            patch("app.ingestion.poller.set_match_state", new_callable=AsyncMock),
+            patch("app.ingestion.poller.put_match"),
+            patch("app.ingestion.poller.emit_heartbeat"),
+            patch(
+                "app.ingestion.poller.rescore_all_brackets", return_value=canned_result
+            ),
+            patch("app.ingestion.poller.clear_leaderboard", new_callable=AsyncMock),
+            patch("app.ingestion.poller.update_leaderboard", new_callable=AsyncMock),
+            patch(
+                "app.ingestion.poller.load_initial_schedule", return_value=(0, 0)
+            ) as mock_load,
+            patch("asyncio.to_thread", side_effect=_fake_to_thread),
+        ):
+            run_async(poller._poll_cycle())
+
+        # Counter should have been set to 5 then decremented to 4 (no updates found)
+        assert poller._ko_refresh_retries == 4
+        mock_load.assert_called_once_with("20260628", "20260719")
+
+    def test_non_grp_completion_does_not_trigger_refresh(self):
+        poller = self._make_poller()
+        poller._match_states = {"R32-1": "live"}
+        poller._ko_refresh_retries = 0
+
+        r32_match = make_match(
+            match_id="R32-1", status="completed", home_score=2, away_score=1
+        )
+        canned_result = {"scored": 0, "failed": 0, "errors": [], "updates": []}
+
+        with (
+            patch("app.ingestion.poller.fetch_scoreboard", return_value=[]),
+            patch(
+                "app.ingestion.poller.espn_events_to_matches",
+                return_value={"R32-1": r32_match},
+            ),
+            patch("app.ingestion.poller.set_match_state", new_callable=AsyncMock),
+            patch("app.ingestion.poller.put_match"),
+            patch("app.ingestion.poller.emit_heartbeat"),
+            patch(
+                "app.ingestion.poller.rescore_all_brackets", return_value=canned_result
+            ),
+            patch("app.ingestion.poller.clear_leaderboard", new_callable=AsyncMock),
+            patch("app.ingestion.poller.update_leaderboard", new_callable=AsyncMock),
+            patch(
+                "app.ingestion.poller.load_initial_schedule", return_value=(0, 0)
+            ) as mock_load,
+            patch("asyncio.to_thread", side_effect=_fake_to_thread),
+        ):
+            run_async(poller._poll_cycle())
+
+        assert poller._ko_refresh_retries == 0
+        mock_load.assert_not_called()
+
+    def test_retries_decrement_when_no_update(self):
+        poller = self._make_poller()
+        poller._match_states = {}
+        poller._ko_refresh_retries = 3
+
+        with (
+            patch("app.ingestion.poller.fetch_scoreboard", return_value=[]),
+            patch(
+                "app.ingestion.poller.espn_events_to_matches", return_value={}
+            ),
+            patch("app.ingestion.poller.set_match_state", new_callable=AsyncMock),
+            patch("app.ingestion.poller.emit_heartbeat"),
+            patch(
+                "app.ingestion.poller.load_initial_schedule", return_value=(0, 0)
+            ) as mock_load,
+            patch("asyncio.to_thread", side_effect=_fake_to_thread),
+        ):
+            run_async(poller._poll_cycle())
+
+        assert poller._ko_refresh_retries == 2
+        mock_load.assert_called_once_with("20260628", "20260719")
+
+    def test_retries_clear_on_successful_update(self):
+        poller = self._make_poller()
+        poller._match_states = {}
+        poller._ko_refresh_retries = 3
+
+        with (
+            patch("app.ingestion.poller.fetch_scoreboard", return_value=[]),
+            patch(
+                "app.ingestion.poller.espn_events_to_matches", return_value={}
+            ),
+            patch("app.ingestion.poller.set_match_state", new_callable=AsyncMock),
+            patch("app.ingestion.poller.emit_heartbeat"),
+            patch(
+                "app.ingestion.poller.load_initial_schedule", return_value=(0, 2)
+            ) as mock_load,
+            patch("asyncio.to_thread", side_effect=_fake_to_thread),
+        ):
+            run_async(poller._poll_cycle())
+
+        assert poller._ko_refresh_retries == 0
+        mock_load.assert_called_once_with("20260628", "20260719")
+
+    def test_multiple_grp_completions_trigger_single_refresh(self):
+        poller = self._make_poller()
+        poller._match_states = {"GRP-1": "live", "GRP-2": "live"}
+
+        grp_match_1 = Match(
+            match_id="GRP-1",
+            round="GRP",
+            match_number=1,
+            home_team="ARG",
+            away_team="BRA",
+            home_score=1,
+            away_score=0,
+            status="completed",
+            kickoff_time="2026-06-26T16:00:00Z",
+        )
+        grp_match_2 = Match(
+            match_id="GRP-2",
+            round="GRP",
+            match_number=2,
+            home_team="FRA",
+            away_team="GER",
+            home_score=2,
+            away_score=1,
+            status="completed",
+            kickoff_time="2026-06-26T16:00:00Z",
+        )
+        canned_result = {"scored": 0, "failed": 0, "errors": [], "updates": []}
+
+        with (
+            patch("app.ingestion.poller.fetch_scoreboard", return_value=[]),
+            patch(
+                "app.ingestion.poller.espn_events_to_matches",
+                return_value={"GRP-1": grp_match_1, "GRP-2": grp_match_2},
+            ),
+            patch("app.ingestion.poller.set_match_state", new_callable=AsyncMock),
+            patch("app.ingestion.poller.put_match"),
+            patch("app.ingestion.poller.emit_heartbeat"),
+            patch(
+                "app.ingestion.poller.rescore_all_brackets", return_value=canned_result
+            ),
+            patch("app.ingestion.poller.clear_leaderboard", new_callable=AsyncMock),
+            patch("app.ingestion.poller.update_leaderboard", new_callable=AsyncMock),
+            patch(
+                "app.ingestion.poller.load_initial_schedule", return_value=(0, 0)
+            ) as mock_load,
+            patch("asyncio.to_thread", side_effect=_fake_to_thread),
+        ):
+            run_async(poller._poll_cycle())
+
+        # Despite two GRP completions, load_initial_schedule called only once
+        mock_load.assert_called_once_with("20260628", "20260719")
 
 
 # ---------------------------------------------------------------------------
