@@ -7,6 +7,7 @@ type Props = {
   teams: [string, string] | null
   records: Record<string, TeamRecord> | null
   onSelect: (winner: string) => void
+  selectedTeam?: string | null
 }
 
 function slotLabel(slotId: string): string {
@@ -17,7 +18,7 @@ function slotLabel(slotId: string): string {
   return slotId
 }
 
-export function WizardPrompt({ slotId, teams, records, onSelect }: Props) {
+export function WizardPrompt({ slotId, teams, records, onSelect, selectedTeam = null }: Props) {
   if (!teams) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-16 text-body-faint">
@@ -48,10 +49,16 @@ export function WizardPrompt({ slotId, teams, records, onSelect }: Props) {
               key={team}
               type="button"
               onClick={() => onSelect(team)}
-              className="group flex flex-col items-center gap-4 px-8 py-6 rounded-2xl border-2 border-edge
-                         bg-surface hover:border-blue-500 hover:bg-blue-50 hover:shadow-md
-                         focus:outline-none focus:border-blue-500
-                         active:scale-95 transition-all duration-100 w-44 cursor-pointer"
+              disabled={!!selectedTeam}
+              className={`group flex flex-col items-center gap-4 px-8 py-6 rounded-2xl border-2
+                         bg-surface focus:outline-none
+                         transition-all duration-300 w-44
+                         ${selectedTeam === team
+                           ? 'border-blue-500 bg-blue-50 scale-105 shadow-md'
+                           : selectedTeam
+                             ? 'border-edge opacity-30 scale-95'
+                             : 'border-edge hover:border-blue-500 hover:bg-blue-50 hover:shadow-md focus:border-blue-500 active:scale-95 cursor-pointer'
+                         }`}
             >
               <TeamFlag code={team} className="w-16 h-16" />
               <span className="text-lg font-bold text-body group-hover:text-blue-600 text-center leading-tight transition-colors">{team}</span>

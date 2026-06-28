@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timezone
 
 from app.config import settings
-from app.db.cache import set_match_state, update_leaderboard
+from app.db.cache import clear_leaderboard, set_match_state, update_leaderboard
 from app.espn.adapter import espn_events_to_matches
 from app.espn.client import fetch_scoreboard
 from app.ingestion.heartbeat import emit_heartbeat
@@ -20,6 +20,7 @@ logger = get_logger("poller")
 class IngestionPoller:
     def __init__(self) -> None:
         self._match_states: dict[str, str] = {}
+        self._ko_refresh_retries: int = 0
 
     async def run(self, shutdown: asyncio.Event) -> None:
         logger.info("poller_starting")
@@ -114,6 +115,8 @@ class IngestionPoller:
         events = await asyncio.to_thread(fetch_scoreboard)
         matches = espn_events_to_matches(events)
 
+        grp_completed = False
+
         for match_id, match in matches.items():
             string_data = {
                 k: str(v) for k, v in match.model_dump(exclude_none=True).items()
@@ -125,8 +128,22 @@ class IngestionPoller:
 
             if previous_status != "completed" and current_status == "completed":
                 await self._handle_completion(match)
+                if match.round == "GRP":
+                    grp_completed = True
 
             self._match_states[match_id] = current_status
+
+        if grp_completed:
+            self._ko_refresh_retries = 5
+
+        if self._ko_refresh_retries > 0:
+            _, updated = await asyncio.to_thread(
+                load_initial_schedule, "20260628", "20260719"
+            )
+            if updated > 0:
+                self._ko_refresh_retries = 0
+            else:
+                self._ko_refresh_retries -= 1
 
         await asyncio.to_thread(emit_heartbeat)
         logger.info("poll_cycle_done", match_count=len(matches))
@@ -142,6 +159,7 @@ class IngestionPoller:
 
         result = await asyncio.to_thread(rescore_all_brackets)
 
+        await clear_leaderboard()
         for _bracket_id, user_id, total_points in result["updates"]:
             await update_leaderboard(user_id, total_points)
 

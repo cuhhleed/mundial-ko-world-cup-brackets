@@ -53,17 +53,17 @@ ALL_SLOTS = (
 )
 
 FEEDERS = {
-    "R16-1": (("R32-1", "winner"), ("R32-2", "winner")),
-    "R16-2": (("R32-3", "winner"), ("R32-4", "winner")),
-    "R16-3": (("R32-5", "winner"), ("R32-6", "winner")),
+    "R16-1": (("R32-1", "winner"), ("R32-4", "winner")),
+    "R16-2": (("R32-3", "winner"), ("R32-6", "winner")),
+    "R16-3": (("R32-2", "winner"), ("R32-5", "winner")),
     "R16-4": (("R32-7", "winner"), ("R32-8", "winner")),
-    "R16-5": (("R32-9", "winner"), ("R32-10", "winner")),
-    "R16-6": (("R32-11", "winner"), ("R32-12", "winner")),
-    "R16-7": (("R32-13", "winner"), ("R32-14", "winner")),
-    "R16-8": (("R32-15", "winner"), ("R32-16", "winner")),
+    "R16-5": (("R32-12", "winner"), ("R32-11", "winner")),
+    "R16-6": (("R32-10", "winner"), ("R32-9", "winner")),
+    "R16-7": (("R32-15", "winner"), ("R32-14", "winner")),
+    "R16-8": (("R32-13", "winner"), ("R32-16", "winner")),
     "QF-1": (("R16-1", "winner"), ("R16-2", "winner")),
-    "QF-2": (("R16-3", "winner"), ("R16-4", "winner")),
-    "QF-3": (("R16-5", "winner"), ("R16-6", "winner")),
+    "QF-2": (("R16-5", "winner"), ("R16-6", "winner")),
+    "QF-3": (("R16-3", "winner"), ("R16-4", "winner")),
     "QF-4": (("R16-7", "winner"), ("R16-8", "winner")),
     "SF-1": (("QF-1", "winner"), ("QF-2", "winner")),
     "SF-2": (("QF-3", "winner"), ("QF-4", "winner")),
@@ -256,12 +256,13 @@ def write_result(
 
 
 async def _run_scoring():
-    from app.db.cache import connect, disconnect, update_leaderboard
+    from app.db.cache import clear_leaderboard, connect, disconnect, update_leaderboard
     from app.services.brackets import rescore_all_brackets
 
     result = rescore_all_brackets()
     if result["updates"]:
         await connect()
+        await clear_leaderboard()
         for _, user_id, total_points in result["updates"]:
             await update_leaderboard(user_id, total_points)
         await disconnect()

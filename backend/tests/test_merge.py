@@ -47,32 +47,37 @@ def full_user_predictions() -> dict[str, SlotPrediction]:
         preds[f"R32-{i}"] = sp([home, away], home)
 
     r16_teams = [
-        ("T01", "T03"),
-        ("T05", "T07"),
-        ("T09", "T11"),
-        ("T13", "T15"),
-        ("T17", "T19"),
-        ("T21", "T23"),
-        ("T25", "T27"),
-        ("T29", "T31"),
+        ("T01", "T07"),  # R16-1: R32-1 winner vs R32-4 winner
+        ("T05", "T11"),  # R16-2: R32-3 winner vs R32-6 winner
+        ("T03", "T09"),  # R16-3: R32-2 winner vs R32-5 winner
+        ("T13", "T15"),  # R16-4: R32-7 winner vs R32-8 winner
+        ("T23", "T21"),  # R16-5: R32-12 winner vs R32-11 winner
+        ("T19", "T17"),  # R16-6: R32-10 winner vs R32-9 winner
+        ("T29", "T27"),  # R16-7: R32-15 winner vs R32-14 winner
+        ("T25", "T31"),  # R16-8: R32-13 winner vs R32-16 winner
     ]
     for i, (h, a) in enumerate(r16_teams, 1):
         preds[f"R16-{i}"] = sp([h, a], h)
 
-    qf_teams = [("T01", "T05"), ("T09", "T13"), ("T17", "T21"), ("T25", "T29")]
+    qf_teams = [
+        ("T01", "T05"),  # QF-1: R16-1 winner vs R16-2 winner
+        ("T23", "T19"),  # QF-2: R16-5 winner vs R16-6 winner
+        ("T03", "T13"),  # QF-3: R16-3 winner vs R16-4 winner
+        ("T29", "T25"),  # QF-4: R16-7 winner vs R16-8 winner
+    ]
     for i, (h, a) in enumerate(qf_teams, 1):
         preds[f"QF-{i}"] = sp([h, a], h)
 
-    preds["SF-1"] = sp(["T01", "T09"], "T01", scores={"T01": 2, "T09": 1})
-    preds["SF-2"] = sp(["T17", "T25"], "T17", scores={"T17": 2, "T25": 0})
+    preds["SF-1"] = sp(["T01", "T23"], "T01", scores={"T01": 2, "T23": 1})
+    preds["SF-2"] = sp(["T03", "T29"], "T03", scores={"T03": 2, "T29": 0})
     preds["FINAL"] = sp(
-        ["T01", "T17"],
+        ["T01", "T03"],
         "T01",
-        scores={"T01": 1, "T17": 1},
+        scores={"T01": 1, "T03": 1},
         pk_winner="T01",
-        pk_scores={"T01": 4, "T17": 3},
+        pk_scores={"T01": 4, "T03": 3},
     )
-    preds["TP"] = sp(["T09", "T25"], "T09")
+    preds["TP"] = sp(["T23", "T29"], "T23")
 
     return preds
 
@@ -150,14 +155,14 @@ class TestNonScoreBearingLockedSlot:
 class TestScoreBearingLockedSlot:
     def test_sf_decisive_includes_scores(self, full_user_predictions):
         completed = {
-            "SF-1": make_match("SF-1", "SF", "T01", "T09", home_score=2, away_score=1),
+            "SF-1": make_match("SF-1", "SF", "T01", "T23", home_score=2, away_score=1),
         }
         user_preds = {k: v for k, v in full_user_predictions.items() if k != "SF-1"}
 
         merged, _ = merge_predictions(user_preds, completed)
 
         pred = merged["SF-1"]
-        assert pred.scores == {"T01": 2, "T09": 1}
+        assert pred.scores == {"T01": 2, "T23": 1}
         assert pred.winner == "T01"
         assert pred.pk_winner is None
         assert pred.pk_scores is None
@@ -168,7 +173,7 @@ class TestScoreBearingLockedSlot:
                 "FINAL",
                 "FINAL",
                 "T01",
-                "T17",
+                "T03",
                 home_score=1,
                 away_score=1,
                 pk_home_score=4,
@@ -181,9 +186,9 @@ class TestScoreBearingLockedSlot:
         merged, _ = merge_predictions(user_preds, completed)
 
         pred = merged["FINAL"]
-        assert pred.scores == {"T01": 1, "T17": 1}
+        assert pred.scores == {"T01": 1, "T03": 1}
         assert pred.pk_winner == "T01"
-        assert pred.pk_scores == {"T01": 4, "T17": 3}
+        assert pred.pk_scores == {"T01": 4, "T03": 3}
         assert pred.winner == "T01"
 
 
@@ -238,13 +243,13 @@ class TestErrorCases:
 
 class TestCascading:
     def test_r32_completed_winners_feed_r16_derivation(self, full_user_predictions):
-        """R32-1 (T01 wins) and R32-2 (T03 wins) completed; R16-1 must still be correct."""
+        """R32-1 (T01 wins) and R32-4 (T07 wins) completed; R16-1 must still be correct."""
         completed = {
             "R32-1": make_match(
                 "R32-1", "R32", "T01", "T02", home_score=2, away_score=0
             ),
-            "R32-2": make_match(
-                "R32-2", "R32", "T03", "T04", home_score=1, away_score=0
+            "R32-4": make_match(
+                "R32-4", "R32", "T07", "T08", home_score=1, away_score=0
             ),
         }
         user_preds = {
@@ -254,7 +259,7 @@ class TestCascading:
         merged, locked = merge_predictions(user_preds, completed)
 
         assert merged["R32-1"].winner == "T01"
-        assert merged["R32-2"].winner == "T03"
-        assert set(locked) == {"R32-1", "R32-2"}
-        assert merged["R16-1"].teams == ["T01", "T03"]
+        assert merged["R32-4"].winner == "T07"
+        assert set(locked) == {"R32-1", "R32-4"}
+        assert merged["R16-1"].teams == ["T01", "T07"]
         assert merged["R16-1"].winner == "T01"

@@ -50,6 +50,12 @@ module "storage" {
   environment                   = var.environment
   private_subnet_ids            = module.networking.private_subnet_ids
   elasticache_security_group_id = module.networking.elasticache_security_group_id
+
+  valkey_node_type          = var.valkey_node_type
+  valkey_num_cache_clusters = var.valkey_num_cache_clusters
+  valkey_multi_az           = var.valkey_multi_az
+  valkey_automatic_failover = var.valkey_automatic_failover
+  valkey_apply_immediately  = var.valkey_apply_immediately
 }
 
 # ---------------------------------------------------------------------------
@@ -98,7 +104,8 @@ module "compute" {
   cognito_app_client_id = module.auth.app_client_id
   google_client_id      = var.google_client_id
 
-  alert_email = var.alert_email
+  alert_email   = var.alert_email
+  desired_count = var.desired_count
 }
 
 # ---------------------------------------------------------------------------

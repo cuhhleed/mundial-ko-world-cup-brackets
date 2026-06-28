@@ -9,17 +9,17 @@ export const ALL_SLOTS: string[] = [...R32_SLOTS, ...R16_SLOTS, ...QF_SLOTS, ...
 export type SlotOutcome = 'winner' | 'loser'
 
 export const FEEDERS: Record<string, [[string, SlotOutcome], [string, SlotOutcome]]> = {
-  'R16-1': [['R32-1', 'winner'], ['R32-2', 'winner']],
-  'R16-2': [['R32-3', 'winner'], ['R32-4', 'winner']],
-  'R16-3': [['R32-5', 'winner'], ['R32-6', 'winner']],
+  'R16-1': [['R32-1', 'winner'], ['R32-4', 'winner']],
+  'R16-2': [['R32-3', 'winner'], ['R32-6', 'winner']],
+  'R16-3': [['R32-2', 'winner'], ['R32-5', 'winner']],
   'R16-4': [['R32-7', 'winner'], ['R32-8', 'winner']],
-  'R16-5': [['R32-9', 'winner'], ['R32-10', 'winner']],
-  'R16-6': [['R32-11', 'winner'], ['R32-12', 'winner']],
-  'R16-7': [['R32-13', 'winner'], ['R32-14', 'winner']],
-  'R16-8': [['R32-15', 'winner'], ['R32-16', 'winner']],
+  'R16-5': [['R32-12', 'winner'], ['R32-11', 'winner']],
+  'R16-6': [['R32-10', 'winner'], ['R32-9', 'winner']],
+  'R16-7': [['R32-15', 'winner'], ['R32-14', 'winner']],
+  'R16-8': [['R32-13', 'winner'], ['R32-16', 'winner']],
   'QF-1': [['R16-1', 'winner'], ['R16-2', 'winner']],
-  'QF-2': [['R16-3', 'winner'], ['R16-4', 'winner']],
-  'QF-3': [['R16-5', 'winner'], ['R16-6', 'winner']],
+  'QF-2': [['R16-5', 'winner'], ['R16-6', 'winner']],
+  'QF-3': [['R16-3', 'winner'], ['R16-4', 'winner']],
   'QF-4': [['R16-7', 'winner'], ['R16-8', 'winner']],
   'SF-1': [['QF-1', 'winner'], ['QF-2', 'winner']],
   'SF-2': [['QF-3', 'winner'], ['QF-4', 'winner']],
@@ -35,6 +35,35 @@ for (const [downstream, [[f1], [f2]]] of Object.entries(FEEDERS)) {
 }
 
 export const SCORE_BEARING_SLOTS = new Set(['SF-1', 'SF-2', 'FINAL'])
+
+// ── Bracket display order ────────────────────────────────────────────────────
+// Cascade columns render top-to-bottom in *bracket* order (not slot-ID order)
+// so the index-based connector geometry lines up cleanly and mirrors the
+// official bracket. Derived from FEEDERS, so it stays correct automatically if
+// the topology changes.
+
+// All R32 leaves beneath a slot, in tree (top-to-bottom) order.
+function leafOrder(slot: string): string[] {
+  const feeders = FEEDERS[slot]
+  if (!feeders) return [slot]
+  return [...leafOrder(feeders[0][0]), ...leafOrder(feeders[1][0])]
+}
+
+// Top half = SF-1's subtree, bottom half = SF-2's subtree.
+const R32_BRACKET_ORDER = [...leafOrder('SF-1'), ...leafOrder('SF-2')]
+const r32Position: Record<string, number> = {}
+R32_BRACKET_ORDER.forEach((slot, i) => {
+  r32Position[slot] = i
+})
+
+// Sort a round's slots by the average bracket position of their R32 leaves.
+export function bracketOrder(slots: string[]): string[] {
+  const key = (slot: string): number => {
+    const leaves = leafOrder(slot)
+    return leaves.reduce((sum, l) => sum + r32Position[l], 0) / leaves.length
+  }
+  return [...slots].sort((a, b) => key(a) - key(b))
+}
 
 export type RoundDef = {
   id: string

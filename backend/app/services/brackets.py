@@ -226,9 +226,10 @@ def get_bracket_template() -> BracketTemplate:
                 result=result,
             )
         elif match:
+            teams = None if slot in FEEDERS else [match.home_team, match.away_team]
             slots[slot] = SlotTemplate(
                 slot_id=slot,
-                teams=[match.home_team, match.away_team],
+                teams=teams,
                 status="open",
             )
         else:

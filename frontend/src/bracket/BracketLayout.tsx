@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BracketSlotCard, type SlotCardData } from './BracketSlotCard'
 import { CARD_H, RoundColumn, UNIT } from './RoundColumn'
-import { FEEDERS, ROUNDS } from './topology'
+import { bracketOrder, FEEDERS, ROUNDS } from './topology'
 import type { ApiSlotPrediction, BracketState } from './types'
 
 type ViewerExtrasMap = Record<string, { result: ApiSlotPrediction; points: number | null }>
@@ -84,7 +84,7 @@ export function BracketLayout({ bracketState, viewerExtras }: Props) {
 
   function getSlotsForRound(roundId: string): SlotCardData[] {
     const round = ROUNDS.find((r) => r.id === roundId)
-    return round ? round.slots.map((sid) => slotData[sid] ?? { slotId: sid, teams: null, winner: null, scores: null, pkScores: null, locked: false }) : []
+    return round ? bracketOrder(round.slots).map((sid) => slotData[sid] ?? { slotId: sid, teams: null, winner: null, scores: null, pkScores: null, locked: false }) : []
   }
 
   const finalsSlot = slotData['FINAL'] ?? { slotId: 'FINAL', teams: null, winner: null, scores: null, pkScores: null, locked: false }
@@ -162,8 +162,8 @@ export function BracketLayout({ bracketState, viewerExtras }: Props) {
           const leftTab = MOBILE_TABS[tabIdx]
           const rightTab = tabIdx + 1 < MOBILE_TABS.length ? MOBILE_TABS[tabIdx + 1] : null
 
-          const leftIds = leftTab.slots
-          const rightIds = rightTab?.slots ?? []
+          const leftIds = bracketOrder(leftTab.slots)
+          const rightIds = rightTab ? bracketOrder(rightTab.slots) : []
           const gap = mGap(leftIds.length)
 
           // Left column: uniform spacing
