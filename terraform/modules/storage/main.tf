@@ -15,16 +15,19 @@ resource "aws_elasticache_parameter_group" "valkey" {
 }
 
 resource "aws_elasticache_replication_group" "valkey" {
-  replication_group_id = "${var.project_name}-${var.environment}-valkey"
-  description          = "Valkey cache for ${var.project_name} ${var.environment}"
-  engine               = "valkey"
-  engine_version       = "9.0"
-  node_type            = var.valkey_node_type
-  num_cache_clusters   = 1
-  parameter_group_name = aws_elasticache_parameter_group.valkey.name
-  subnet_group_name    = aws_elasticache_subnet_group.valkey.name
-  port                 = 6379
-  security_group_ids   = [var.elasticache_security_group_id]
+  replication_group_id       = "${var.project_name}-${var.environment}-valkey"
+  description                = "Valkey cache for ${var.project_name} ${var.environment}"
+  engine                     = "valkey"
+  engine_version             = "9.0"
+  node_type                  = var.valkey_node_type
+  num_cache_clusters         = var.valkey_num_cache_clusters
+  automatic_failover_enabled = var.valkey_automatic_failover
+  multi_az_enabled           = var.valkey_multi_az
+  apply_immediately          = var.valkey_apply_immediately
+  parameter_group_name       = aws_elasticache_parameter_group.valkey.name
+  subnet_group_name          = aws_elasticache_subnet_group.valkey.name
+  port                       = 6379
+  security_group_ids         = [var.elasticache_security_group_id]
 }
 
 # ---------------------------------------------------------------------------

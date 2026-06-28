@@ -25,3 +25,27 @@ variable "valkey_node_type" {
   type        = string
   default     = "cache.t3.micro"
 }
+
+variable "valkey_num_cache_clusters" {
+  description = "Number of cache clusters (nodes) in the Valkey replication group"
+  type        = number
+  default     = 1
+}
+
+variable "valkey_multi_az" {
+  description = "Enable Multi-AZ for the Valkey replication group"
+  type        = bool
+  default     = false
+}
+
+variable "valkey_automatic_failover" {
+  description = "Enable automatic failover for the Valkey replication group"
+  type        = bool
+  default     = false
+}
+
+variable "valkey_apply_immediately" {
+  description = "Apply changes to the Valkey replication group immediately rather than in the next maintenance window"
+  type        = bool
+  default     = false
+}
