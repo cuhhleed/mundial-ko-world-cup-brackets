@@ -98,8 +98,15 @@ function reducer(state: BracketState, action: BracketAction): BracketState {
         }
       }
 
-      const initialSlots: Record<string, SlotState> = JSON.parse(JSON.stringify(slots))
-      return { slots, initialSlots }
+      let cascaded = { ...slots }
+      for (const slotId of ALL_SLOTS) {
+        if (cascaded[slotId]?.locked) {
+          cascaded = cascadeFrom(slotId, cascaded)
+        }
+      }
+
+      const initialSlots: Record<string, SlotState> = JSON.parse(JSON.stringify(cascaded))
+      return { slots: cascaded, initialSlots }
     }
 
     case 'SELECT_WINNER': {
