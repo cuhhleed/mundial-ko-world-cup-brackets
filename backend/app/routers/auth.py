@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.auth.verifier import GoogleJwtVerifier, InvalidTokenError, get_verifier
+from app.db.cache import update_leaderboard
 from app.logging import get_logger
 from app.models.bracket import Bracket, SlotPrediction
 from app.models.user import UserRecord
@@ -49,6 +50,7 @@ def check_user(
 @router.post("/signup", response_model=SignupResponse, status_code=201)
 def signup(
     body: SignupRequest,
+    background_tasks: BackgroundTasks,
     verifier: GoogleJwtVerifier = Depends(get_verifier),
 ) -> SignupResponse:
     try:
@@ -72,5 +74,6 @@ def signup(
     except DuplicateBracketError:
         raise HTTPException(status_code=409, detail="User already has a bracket.")
 
+    background_tasks.add_task(update_leaderboard, user_id, 0)
     logger.info("signup_complete", user_id=user_id, bracket_id=bracket.bracket_id)
     return SignupResponse(user=user_record, bracket=bracket)
