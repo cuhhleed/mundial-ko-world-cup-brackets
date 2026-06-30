@@ -63,11 +63,11 @@ def get_scheduled_matches() -> dict[str, Match]:
 
 
 async def get_all_matches_with_live_overlay() -> dict[str, Match]:
-    """Return all matches, overlaying Redis live state for non-completed matches."""
+    """Return all matches, overlaying Redis live state for live matches only."""
     matches = get_all_matches()
 
     for match_id, match in list(matches.items()):
-        if match.status != "completed":
+        if match.status == "live":
             redis_data = await get_match_state(match_id)
             if redis_data:
                 # Merge Redis fields onto the base match
