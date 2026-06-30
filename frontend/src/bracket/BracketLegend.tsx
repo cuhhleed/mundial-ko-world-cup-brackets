@@ -103,6 +103,15 @@ export function BracketLegend({
             }
             label="Match was already decided when you created your bracket"
           />
+          <LegendItem
+            icon={
+              <div className="w-4 h-5 rounded-sm bg-amber-50 flex flex-col items-center justify-center divide-y divide-amber-200 text-[7px] font-semibold text-amber-700 leading-none">
+                <span className="flex-1 flex items-center">5</span>
+                <span className="flex-1 flex items-center">3</span>
+              </div>
+            }
+            label="Penalty shootout scores"
+          />
 
           <p className="font-semibold text-body-secondary sm:col-span-2 lg:col-span-3 mt-2 mb-1">
             Icons

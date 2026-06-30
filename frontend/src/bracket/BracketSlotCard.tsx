@@ -147,15 +147,13 @@ export function BracketSlotCard({ slot, viewer }: Props) {
             score={scores?.[1] ?? null}
             isWinner={winner === team2}
           />
-          {pkScores && (
-            <div className="flex justify-between px-2 py-0.5 bg-amber-50 text-[10px] text-amber-700">
-              <span>PK</span>
-              <span>
-                {pkScores[0]} – {pkScores[1]}
-              </span>
-            </div>
-          )}
         </div>
+        {pkScores && (
+          <div className="flex flex-col items-center justify-center w-5 shrink-0 bg-amber-50 text-[10px] font-semibold text-amber-700 divide-y divide-amber-200">
+            <span className="flex-1 flex items-center">{pkScores[0]}</span>
+            <span className="flex-1 flex items-center">{pkScores[1]}</span>
+          </div>
+        )}
       </div>
 
     </div>
