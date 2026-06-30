@@ -99,6 +99,8 @@ class IngestionPoller:
                 continue
 
             seconds_until = (kickoff - now).total_seconds()
+            if seconds_until <= 0:
+                return poll_interval
             if seconds_until > 0:
                 if nearest_seconds is None or seconds_until < nearest_seconds:
                     nearest_seconds = seconds_until

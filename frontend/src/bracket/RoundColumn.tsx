@@ -4,7 +4,7 @@ import type { ApiSlotPrediction } from "./types";
 
 // Layout constants (shared with BracketLayout)
 export const UNIT = 64; // px per R32 bracket unit
-export const CARD_H = 48; // px — accounts for locked banner / PK row
+export const CARD_H = 48;
 export const CONN_W = 28; // px — width of connector arm area to the right
 
 type ViewerExtrasMap = Record<

@@ -203,6 +203,27 @@ class TestComputeSleepDuration:
 
         assert result == 3600
 
+    def test_returns_poll_interval_when_kickoff_has_passed(self, monkeypatch):
+        monkeypatch.setattr("app.config.settings.INGESTION_POLL_INTERVAL", 60)
+        monkeypatch.setattr("app.config.settings.INGESTION_HEARTBEAT_INTERVAL", 3600)
+        monkeypatch.setattr("app.config.settings.INGESTION_PRE_KICKOFF_BUFFER", 300)
+
+        poller = self._make_poller()
+        poller._match_states = {}
+
+        # Kickoff 10 minutes ago — match should be live but ESPN may not report it yet
+        past_kickoff = (
+            datetime.now(tz=timezone.utc) - timedelta(minutes=10)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        match = make_match(status="scheduled", kickoff_time=past_kickoff)
+
+        with patch(
+            "app.ingestion.poller.get_scheduled_matches", return_value={"R32-1": match}
+        ):
+            result = poller._compute_sleep_duration()
+
+        assert result == 60
+
 
 # ---------------------------------------------------------------------------
 # _poll_cycle transition detection

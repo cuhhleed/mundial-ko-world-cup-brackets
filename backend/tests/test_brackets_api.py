@@ -395,6 +395,50 @@ class TestScoringIntegration:
         assert data["total_points"] == 0
 
 
+class TestLeaderboardOnCreate:
+    def test_signup_adds_user_to_leaderboard(
+        self, client: TestClient, valid_predictions, monkeypatch
+    ):
+        calls = []
+
+        async def mock_update(user_id, points):
+            calls.append((user_id, points))
+
+        monkeypatch.setattr(
+            "app.routers.auth.update_leaderboard", mock_update
+        )
+
+        token = make_token(sub="new-user-123", email="new@example.com")
+        resp = client.post(
+            "/api/auth/signup",
+            json={"token": token, "predictions": valid_predictions},
+        )
+        assert resp.status_code == 201
+        assert calls == [("new-user-123", 0)]
+
+    def test_signup_validation_error_does_not_add_to_leaderboard(
+        self, client: TestClient, valid_predictions, monkeypatch
+    ):
+        calls = []
+
+        async def mock_update(user_id, points):
+            calls.append((user_id, points))
+
+        monkeypatch.setattr(
+            "app.routers.auth.update_leaderboard", mock_update
+        )
+
+        incomplete = dict(valid_predictions)
+        del incomplete["FINAL"]
+        token = make_token(sub="fail-user", email="fail@example.com")
+        resp = client.post(
+            "/api/auth/signup",
+            json={"token": token, "predictions": incomplete},
+        )
+        assert resp.status_code == 400
+        assert calls == []
+
+
 class TestBracketTemplate:
     def test_template_with_no_matches_all_open(self, client: TestClient):
         resp = client.get("/api/brackets/template")
